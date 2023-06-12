@@ -1,18 +1,17 @@
 import React, { useMemo } from 'react'
 import { Card, CardFooter, CardBody, CardHeader, Typography, List, ListItem, ListItemPrefix, Checkbox } from '@material-tailwind/react'
+import { v4 as uuidv4 } from 'uuid'
 import { Responsive, WidthProvider } from "react-grid-layout";
 // const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
 const ResponsiveGridLayout = WidthProvider(Responsive);
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
-
+const v4Id = uuidv4();
 
 // 网格布局的位置布局，将决定定位
 const layout = [
     { i: "blue-eyes-dragon", x: 0, y: 0, w: 2, h: 2 },
     { i: "dark-magician", x: 2, y: 0, w: 2, h: 2 },
     { i: "kuriboh", x: 4, y: 0, w: 2, h: 2 },
-    { i: "spell-caster", x: 6, y: 0, w: 2, h: 4, static: true },
+    { i: "spell-caster", x: 6, y: 0, w: 2, h: 4 },
     { i: "summoned-skull", x: 0, y: 1, w: 2, h: 2 }
 ];
 
