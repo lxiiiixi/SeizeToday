@@ -19,8 +19,16 @@ const layout = [
     { i: "4444", x: 6, y: 0, w: 2, h: 2 },
     { i: "5555", x: 0, y: 1, w: 2, h: 2 }
 ];
-const summaryLayout = { i: "summary", x: 0, y: 0, w: 2, h: 2 }
 
+
+const summaryLayout = { i: "summary", x: 0, y: 0, w: 2, h: 2 }
+const defaultLayout = {
+    lg: [summaryLayout],
+    md: [summaryLayout],
+    sm: [summaryLayout],
+    xs: [summaryLayout],
+    xxs: [summaryLayout]
+}
 
 const data = [
     { id: "1111", name: "name1", subList: [{ id: "11", taskName: "work1", checked: false }] },
@@ -32,25 +40,11 @@ const data = [
 
 export function Today2() {
     const [isDraggable, setIsDraggable] = useState(false);
-    const [gridLayout, setGridLayout] = useState([summaryLayout]);
-    const [dataList, setDataList] = useState([]);
+    const [gridLayout, setGridLayout] = useState(JSON.parse(localStorage.getItem("gridLayout")) || defaultLayout);
+    const [dataList, setDataList] = useState(JSON.parse(localStorage.getItem("dataList")) || []);
+    const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
-    const [summaryText, setSummaryText] = useState("");
-    const [open, setOpen] = React.useState(false);
-
-
-    useEffect(() => {
-        console.log("update data");
-        const storagedGridLayout = localStorage.getItem("gridLayout")
-        const storagedDataList = localStorage.getItem("dataList")
-        const storagedSummary = localStorage.getItem("summary")
-        console.log(JSON.parse(storagedGridLayout));
-
-        if (storagedGridLayout) setGridLayout(JSON.parse(storagedGridLayout))
-        if (storagedDataList) setDataList(JSON.parse(storagedDataList))
-        if (storagedSummary) setSummaryText(storagedSummary)
-    }, [])
-
+    const [open, setOpen] = useState(false);
 
 
     const addCardItem = () => {
@@ -63,13 +57,20 @@ export function Today2() {
             }
             const newLayout = { i: newId, x: 0, y: 0, w: 2, h: 2 }
             setDataList(oldList => [...oldList, newItem])
-            setGridLayout(oldLayout => [...oldLayout, newLayout])
+            setGridLayout((oldLayout) => {
+                return {
+                    lg: [...oldLayout.lg, newLayout],
+                    md: [...oldLayout.md, newLayout],
+                    sm: [...oldLayout.sm, newLayout],
+                    xs: [...oldLayout.xs, newLayout],
+                    xxs: [...oldLayout.xxs, newLayout],
+                }
+            })
             setAddItemText("")
         }
     }
 
     const handleSave = () => {
-        console.log(gridLayout);
         localStorage.setItem("gridLayout", JSON.stringify(gridLayout))
         localStorage.setItem("dataList", JSON.stringify(dataList))
         localStorage.setItem("summary", summaryText)
@@ -96,7 +97,6 @@ export function Today2() {
     }
 
     const handleSubItemCheck = (cardId, taskId, ifChecked) => {
-        console.log(cardId, taskId, ifChecked);
         const newList = dataList.map(card => {
             if (card.id === cardId) {
                 const newSublist = card.subList.map(subItem => {
@@ -127,14 +127,13 @@ export function Today2() {
 
 
     const handleLayoutChange = (layout, layouts) => {
-        console.log(layout, layouts);
-        setGridLayout(layout)
-        // localStorage.setItem("grid-layout", JSON.stringify(layouts));
+        // console.log(layout, layouts);
+        setGridLayout(layouts)
     };
 
     // https://github.com/react-grid-layout/react-grid-layout#responsive-grid-layout-props
     return (
-        <div className="py-4 bg-purple-50">
+        <div className="py-4 bg-purple-50 rounded-lg min-h-screen">
             {/* alert */}
             <Alert
                 open={open}
@@ -154,9 +153,9 @@ export function Today2() {
                     Your data has been saved.
                 </Typography>
             </Alert>
-            <div className="m-4 flex">
+            <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
                 <Button className="mr-4" onClick={handleSave}>Save</Button>
-                <Switch label="Draggable" ripple={true} checked={isDraggable} onClick={() => setIsDraggable(!isDraggable)} />
+                <Switch label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
                 <div className="relative flex w-full max-w-[24rem] ml-5" >
                     <Input
                         label="Add a card"
@@ -179,7 +178,7 @@ export function Today2() {
                 </div>
             </div>
             <ResponsiveGridLayout
-                layouts={{ lg: gridLayout }}
+                layouts={gridLayout}
                 breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                 cols={{ lg: 8, md: 6, sm: 4, xs: 4, xxs: 2 }}
                 // layout={gridLayout}
@@ -208,8 +207,15 @@ export function Today2() {
                         >
                             Summary
                         </CardHeader>
-                        <CardBody className="pb-0">
-                            <Textarea value={summaryText} onChange={(e) => setSummaryText(e.target.value)} size="lg" label="Summary" style={{ minHeight: "220px" }} />
+                        <CardBody className="p-4 pb-0">
+                            <Textarea
+                                value={summaryText}
+                                onChange={(e) => setSummaryText(e.target.value)}
+                                size="lg"
+                                resize={true}
+                                label="Summary"
+                                style={{ minHeight: "220px" }}
+                            />
                         </CardBody>
                     </Card>
                 </div>
