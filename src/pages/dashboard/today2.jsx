@@ -7,10 +7,10 @@ import {
     Textarea
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
-import { Responsive, WidthProvider } from "react-grid-layout";
 import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon } from "@heroicons/react/24/solid";
-// const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
+import { Responsive, WidthProvider } from "react-grid-layout";
 const ResponsiveGridLayout = WidthProvider(Responsive);
+// const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
 
 const layout = [
     { i: "1111", x: 0, y: 0, w: 2, h: 2 },
@@ -40,10 +40,11 @@ export function Today2() {
 
 
     useEffect(() => {
+        console.log("update data");
         const storagedGridLayout = localStorage.getItem("gridLayout")
         const storagedDataList = localStorage.getItem("dataList")
         const storagedSummary = localStorage.getItem("summary")
-        console.log(storagedSummary);
+        console.log(JSON.parse(storagedGridLayout));
 
         if (storagedGridLayout) setGridLayout(JSON.parse(storagedGridLayout))
         if (storagedDataList) setDataList(JSON.parse(storagedDataList))
@@ -68,6 +69,7 @@ export function Today2() {
     }
 
     const handleSave = () => {
+        console.log(gridLayout);
         localStorage.setItem("gridLayout", JSON.stringify(gridLayout))
         localStorage.setItem("dataList", JSON.stringify(dataList))
         localStorage.setItem("summary", summaryText)
@@ -125,6 +127,8 @@ export function Today2() {
 
 
     const handleLayoutChange = (layout, layouts) => {
+        console.log(layout, layouts);
+        setGridLayout(layout)
         // localStorage.setItem("grid-layout", JSON.stringify(layouts));
     };
 
@@ -178,6 +182,8 @@ export function Today2() {
                 layouts={{ lg: gridLayout }}
                 breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                 cols={{ lg: 8, md: 6, sm: 4, xs: 4, xxs: 2 }}
+                // layout={gridLayout}
+                // cols={8}
                 rowHeight={150}
                 onLayoutChange={handleLayoutChange}
                 isDraggable={isDraggable}
