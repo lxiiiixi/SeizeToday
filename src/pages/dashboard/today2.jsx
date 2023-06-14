@@ -8,6 +8,7 @@ import {
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
 import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon } from "@heroicons/react/24/solid";
+import TextareaAutosize from 'react-textarea-autosize';
 import { Responsive, WidthProvider } from "react-grid-layout";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 // const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
@@ -45,6 +46,20 @@ export function Today2() {
     const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        const targetElement = document.getElementById('test');
+
+        const handleClick = function () {
+            const textareaElement = targetElement.querySelector('textarea');
+
+            textareaElement.focus();
+        };
+        targetElement.addEventListener('click', handleClick);
+        return () => {
+            targetElement.removeEventListener('click', handleClick);
+        };
+    }, []);
 
 
     const addCardItem = () => {
@@ -207,14 +222,12 @@ export function Today2() {
                         >
                             Summary
                         </CardHeader>
-                        <CardBody className="p-4 pb-0">
-                            <Textarea
+                        <CardBody className="p-2 pb-0 h-full" id='test'>
+                            <TextareaAutosize
+                                minRows={4}
                                 value={summaryText}
                                 onChange={(e) => setSummaryText(e.target.value)}
-                                size="lg"
-                                resize={true}
-                                label="Summary"
-                                style={{ minHeight: "220px" }}
+                                className="w-full p-2 focus:border focus:outline-red-500"
                             />
                         </CardBody>
                     </Card>
