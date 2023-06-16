@@ -130,6 +130,18 @@ export function Today2() {
         setDataList(newList)
     }
 
+    const handleDeleteTask = (cardId, taskId) => {
+        const newList = dataList.map(item => {
+            if (item.id === cardId) {
+                const subList = item.subList.filter(subItem => subItem.id !== taskId);
+                return { ...item, subList };
+            }
+            return item
+        })
+        console.log(newList);
+        setDataList(newList)
+    }
+
     const handleNamechange = (id, name) => {
         const newList = dataList.map(item => {
             if (item.id === id) {
@@ -210,6 +222,7 @@ export function Today2() {
                             handleDeleteCard={handleDeleteCard}
                             handleSubItemAdd={handleSubItemAdd}
                             handleSubItemCheck={handleSubItemCheck}
+                            handleDeleteTask={handleDeleteTask}
                         />
                     </div>
                 ))}
@@ -227,7 +240,7 @@ export function Today2() {
                                 minRows={4}
                                 value={summaryText}
                                 onChange={(e) => setSummaryText(e.target.value)}
-                                className="w-full p-2 focus:border focus:outline-red-500"
+                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full"
                             />
                         </CardBody>
                     </Card>
@@ -241,7 +254,7 @@ export function Today2() {
 export default Today2
 
 
-const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck }) => {
+const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [addItemText, setAddItemText] = useState("")
 
@@ -271,6 +284,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                             cardId={cardData.id}
                             subItem={item}
                             handleSubItemCheck={handleSubItemCheck}
+                            handleDeleteTask={handleDeleteTask}
                         />
                     })}
                 </List>
@@ -311,7 +325,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
     )
 }
 
-const CheckListItem = ({ cardId, subItem, handleSubItemCheck }) => {
+const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask }) => {
 
     const handleCheck = (e) => {
         const ifChecked = e.target.checked
@@ -321,7 +335,7 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck }) => {
     return (<ListItem ripple={false} className="p-0 group">
         <Checkbox id={subItem.id} label={subItem.taskName} checked={subItem.checked} onChange={handleCheck} className="hover:before:opacity-0" />
         <ListItemSuffix>
-            <IconButton variant="text" color="blue-gray" className="hidden group-hover:block">
+            <IconButton onClick={() => handleDeleteTask(cardId, subItem.id)} variant="text" color="blue-gray" className="hidden group-hover:block">
                 <TrashIcon className="h-4 w-4" />
             </IconButton>
         </ListItemSuffix>
