@@ -4,10 +4,10 @@ import {
     Typography, List, ListItem, ListItemSuffix,
     Checkbox, IconButton, Switch, Input, Button,
     Alert, Popover, PopoverHandler, PopoverContent,
-    Textarea
+    Menu, MenuHandler, MenuList, MenuItem, ListItemPrefix
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
-import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon } from "@heroicons/react/24/solid";
+import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon } from "@heroicons/react/24/solid";
 import TextareaAutosize from 'react-textarea-autosize';
 import { Responsive, WidthProvider } from "react-grid-layout";
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -32,11 +32,11 @@ const defaultLayout = {
 }
 
 const data = [
-    { id: "1111", name: "name1", subList: [{ id: "11", taskName: "work1", checked: false }] },
-    { id: "2222", name: "name2", subList: [{ id: "22", taskName: "work1", checked: false }] },
-    { id: "3333", name: "name3", subList: [{ id: "33", taskName: "work1", checked: false }] },
-    { id: "4444", name: "name4", subList: [{ id: "44", taskName: "work1", checked: false }] },
-    { id: "5555", name: "name5", subList: [{ id: "55", taskName: "work1", checked: false }] },
+    { id: "1111", name: "name1", subList: [{ id: "11", taskName: "work1", checked: false, line: true }] },
+    { id: "2222", name: "name2", subList: [{ id: "22", taskName: "work1", checked: false, line: false }] },
+    { id: "3333", name: "name3", subList: [{ id: "33", taskName: "work1", checked: false, line: true }] },
+    { id: "4444", name: "name4", subList: [{ id: "44", taskName: "work1", checked: false, line: false }] },
+    { id: "5555", name: "name5", subList: [{ id: "55", taskName: "work1", checked: false, line: true }] },
 ]
 
 export function Today2() {
@@ -130,6 +130,25 @@ export function Today2() {
         setDataList(newList)
     }
 
+    const handleLine = (cardId, taskId) => {
+        const newList = dataList.map(card => {
+            if (card.id === cardId) {
+                const newSublist = card.subList.map(subItem => {
+                    if (subItem.id === taskId) {
+                        subItem.line = !subItem.line
+                    }
+                    return subItem
+                })
+                return {
+                    ...card,
+                    subList: newSublist
+                };
+            }
+            return card
+        })
+        setDataList(newList)
+    }
+
     const handleDeleteTask = (cardId, taskId) => {
         const newList = dataList.map(item => {
             if (item.id === cardId) {
@@ -138,7 +157,6 @@ export function Today2() {
             }
             return item
         })
-        console.log(newList);
         setDataList(newList)
     }
 
@@ -223,6 +241,7 @@ export function Today2() {
                             handleSubItemAdd={handleSubItemAdd}
                             handleSubItemCheck={handleSubItemCheck}
                             handleDeleteTask={handleDeleteTask}
+                            handleLine={handleLine}
                         />
                     </div>
                 ))}
@@ -240,7 +259,7 @@ export function Today2() {
                                 minRows={4}
                                 value={summaryText}
                                 onChange={(e) => setSummaryText(e.target.value)}
-                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full"
+                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-thin"
                             />
                         </CardBody>
                     </Card>
@@ -254,7 +273,7 @@ export function Today2() {
 export default Today2
 
 
-const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask }) => {
+const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [addItemText, setAddItemText] = useState("")
 
@@ -285,6 +304,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                             subItem={item}
                             handleSubItemCheck={handleSubItemCheck}
                             handleDeleteTask={handleDeleteTask}
+                            handleLine={handleLine}
                         />
                     })}
                 </List>
@@ -325,19 +345,68 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
     )
 }
 
-const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask }) => {
+const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, handleLine }) => {
+    const [openMenu, setOpenMenu] = useState(false);
+
+    const triggers = {
+        onMouseEnter: () => setOpenMenu(true),
+        onMouseLeave: () => setOpenMenu(false),
+    };
 
     const handleCheck = (e) => {
         const ifChecked = e.target.checked
         handleSubItemCheck(cardId, subItem.id, ifChecked)
     }
 
-    return (<ListItem ripple={false} className="p-0 group">
-        <Checkbox id={subItem.id} label={subItem.taskName} checked={subItem.checked} onChange={handleCheck} className="hover:before:opacity-0" />
-        <ListItemSuffix>
-            <IconButton onClick={() => handleDeleteTask(cardId, subItem.id)} variant="text" color="blue-gray" className="hidden group-hover:block">
-                <TrashIcon className="h-4 w-4" />
-            </IconButton>
-        </ListItemSuffix>
-    </ListItem>)
+    // item?.line 只是为了兼容之前旧的数据，之后可以删掉？
+    return (
+        <ListItem ripple={false} className={`p-0 group ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
+            <label
+                htmlFor="vertical-list-react"
+                className={`px-3 py-2 flex items-center w-full cursor-pointer`}
+            >
+                <ListItemPrefix className="mr-3">
+                    <Checkbox
+                        id={subItem.id}
+                        ripple={false}
+                        className="hover:before:opacity-0 p-0"
+                        checked={subItem.checked}
+                        onChange={handleCheck}
+                        containerProps={{
+                            className: "p-0"
+                        }}
+                    />
+                </ListItemPrefix>
+                <Typography color="blue-gray" className="font-thin">{subItem.taskName}</Typography>
+            </label>
+            <ListItemSuffix className="h-full" {...triggers}>
+                <Menu
+                    open={openMenu}
+                    handler={setOpenMenu}
+                    placement="bottom-end"
+                    animate={{
+                        mount: { y: 0 },
+                        unmount: { y: 25 },
+                    }}
+                >
+                    <MenuHandler >
+                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover:opacity-100" />
+                    </MenuHandler>
+                    <MenuList>
+                        <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
+                            <TrashIcon strokeWidth={2} className="h-4 w-4" />
+                            <Typography variant="small" className="font-normal">
+                                Delete
+                            </Typography>
+                        </MenuItem>
+                        <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
+                            <MinusIcon strokeWidth={2} className="h-6 w-4" />
+                            <Typography variant="small" className="font-normal">
+                                Mark Line
+                            </Typography>
+                        </MenuItem>
+                    </MenuList>
+                </Menu>
+            </ListItemSuffix>
+        </ListItem>)
 }
