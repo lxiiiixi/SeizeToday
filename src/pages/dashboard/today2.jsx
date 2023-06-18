@@ -7,11 +7,14 @@ import {
     Menu, MenuHandler, MenuList, MenuItem, ListItemPrefix
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
-import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon } from "@heroicons/react/24/solid";
+import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon } from "@heroicons/react/24/solid";
 import TextareaAutosize from 'react-textarea-autosize';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 // const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
+
+// icon：https://heroicons.com/
 
 const layout = [
     { i: "1111", x: 0, y: 0, w: 2, h: 2 },
@@ -395,6 +398,14 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                         <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover:opacity-100" />
                     </MenuHandler>
                     <MenuList>
+                        <MenuItem className="flex items-center gap-2">
+                            <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                            <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
+                                <Typography variant="small" className="font-normal">
+                                    Copy
+                                </Typography>
+                            </CopyToClipboard>
+                        </MenuItem>
                         <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
                             <TrashIcon strokeWidth={2} className="h-4 w-4" />
                             <Typography variant="small" className="font-normal">
