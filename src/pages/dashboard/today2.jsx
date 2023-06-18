@@ -46,6 +46,7 @@ export function Today2() {
     const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
+    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList")
 
     useEffect(() => {
         const targetElement = document.getElementById('test');
@@ -199,7 +200,7 @@ export function Today2() {
                 </Typography>
             </Alert>
             <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
-                <Button className="mr-4" onClick={handleSave}>Save</Button>
+                <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
                 <Switch label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
                 <div className="relative flex w-full max-w-[24rem] ml-5" >
                     <Input
@@ -259,7 +260,7 @@ export function Today2() {
                                 minRows={4}
                                 value={summaryText}
                                 onChange={(e) => setSummaryText(e.target.value)}
-                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-thin"
+                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-light"
                             />
                         </CardBody>
                     </Card>
@@ -282,6 +283,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
         setAddItemText("")
     }
 
+    // 嵌套group：不生效 https://tailwindcss.com/docs/hover-focus-and-other-states#differentiating-nested-groups
     return (
         <Card className="w-full h-full pt-2 pb-4">
             <CardHeader
@@ -293,7 +295,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                 <Typography variant="h6" color="white">
                     {cardData.name}
                 </Typography>
-                <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer hidden group-hover:block" />
+                <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </CardHeader>
             <CardBody className="flex flex-col p-0 overflow-scroll">
                 <List ripple={true}>
@@ -316,7 +318,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                 }}
             >
                 <PopoverHandler onClick={() => setAddItemText("")}>
-                    <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer " />
+                    <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
                 </PopoverHandler>
                 <PopoverContent>
                     <div className="relative flex w-full max-w-[24rem]" >
@@ -377,7 +379,7 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                         }}
                     />
                 </ListItemPrefix>
-                <Typography color="blue-gray" className="font-thin">{subItem.taskName}</Typography>
+                <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
             </label>
             <ListItemSuffix className="h-full" {...triggers}>
                 <Menu
