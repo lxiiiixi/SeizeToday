@@ -7,7 +7,7 @@ import {
     Menu, MenuHandler, MenuList, MenuItem, ListItemPrefix
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
-import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon } from "@heroicons/react/24/solid";
+import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon, CheckIcon, PencilSquareIcon } from "@heroicons/react/24/solid";
 import TextareaAutosize from 'react-textarea-autosize';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
@@ -42,6 +42,7 @@ const data = [
     { id: "5555", name: "name5", subList: [{ id: "55", taskName: "work1", checked: false, line: true }] },
 ]
 
+
 export function Today2() {
     const [isDraggable, setIsDraggable] = useState(false);
     const [gridLayout, setGridLayout] = useState(JSON.parse(localStorage.getItem("gridLayout")) || defaultLayout);
@@ -49,7 +50,8 @@ export function Today2() {
     const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
-    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList")
+    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
+
 
     useEffect(() => {
         const targetElement = document.getElementById('test');
@@ -174,6 +176,24 @@ export function Today2() {
         setDataList(newList)
     }
 
+    const handleItemNameChange = (cardId, taskId, text) => {
+        const newList = dataList.map(card => {
+            if (card.id === cardId) {
+                const newSublist = card.subList.map(subItem => {
+                    if (subItem.id === taskId) {
+                        subItem.taskName = text
+                    }
+                    return subItem
+                })
+                return {
+                    ...card,
+                    subList: newSublist
+                };
+            }
+            return card
+        })
+        setDataList(newList)
+    }
 
     const handleLayoutChange = (layout, layouts) => {
         // console.log(layout, layouts);
@@ -202,6 +222,7 @@ export function Today2() {
                     Your data has been saved.
                 </Typography>
             </Alert>
+
             <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
                 <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
                 <Switch label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
@@ -246,6 +267,8 @@ export function Today2() {
                             handleSubItemCheck={handleSubItemCheck}
                             handleDeleteTask={handleDeleteTask}
                             handleLine={handleLine}
+                            handleNamechange={handleNamechange}
+                            handleItemNameChange={handleItemNameChange}
                         />
                     </div>
                 ))}
@@ -273,17 +296,30 @@ export function Today2() {
     )
 }
 
-
 export default Today2
 
 
-const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine }) => {
+const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine, handleNamechange, handleItemNameChange }) => {
     const [isEditing, setIsEditing] = useState(false)
+    const [editingText, setEditingText] = useState("")
     const [addItemText, setAddItemText] = useState("")
+    const [openMenu, setOpenMenu] = useState(false);
+
+    const triggers = {
+        onMouseEnter: () => setOpenMenu(true),
+        onMouseLeave: () => setOpenMenu(false),
+    };
+
 
     const handleAdd = () => {
         handleSubItemAdd(cardData.id, addItemText)
         setAddItemText("")
+    }
+
+    const handleChangeName = () => {
+        handleNamechange(cardData.id, editingText)
+        setEditingText("")
+        setIsEditing(false)
     }
 
     // 嵌套group：不生效 https://tailwindcss.com/docs/hover-focus-and-other-states#differentiating-nested-groups
@@ -294,11 +330,60 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                 color="gray"
                 className="grid h-10 place-items-center group"
             >
-
-                <Typography variant="h6" color="white">
-                    {cardData.name}
-                </Typography>
-                <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {isEditing ?
+                    <div className="relative flex w-full max-w-[24rem]">
+                        <Input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => { setEditingText(e.target.value) }}
+                            placeholder={cardData.name}
+                            className="!border-none"
+                            labelProps={{
+                                className: "hidden"
+                            }}
+                        />
+                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                            <CheckIcon className="h-5 w-5" />
+                        </IconButton>
+                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                            <XMarkIcon className="h-5 w-5" />
+                        </IconButton>
+                    </div>
+                    :
+                    <Typography variant="h6" color="white">
+                        {cardData.name}
+                    </Typography>
+                }
+                {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
+                {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
+                    <Menu
+                        open={openMenu}
+                        handler={setOpenMenu}
+                        placement="bottom-end"
+                        animate={{
+                            mount: { y: 0 },
+                            unmount: { y: 25 },
+                        }}
+                    >
+                        <MenuHandler>
+                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover:opacity-100" />
+                        </MenuHandler>
+                        <MenuList>
+                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
+                                <XMarkIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Delete
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem className="flex items-center gap-2" onClick={() => setIsEditing(true)}>
+                                <PencilSquareIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Edit
+                                </Typography>
+                            </MenuItem>
+                        </MenuList>
+                    </Menu>
+                </ListItemSuffix>}
             </CardHeader>
             <CardBody className="flex flex-col p-0 overflow-scroll">
                 <List ripple={true}>
@@ -310,6 +395,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                             handleSubItemCheck={handleSubItemCheck}
                             handleDeleteTask={handleDeleteTask}
                             handleLine={handleLine}
+                            handleItemNameChange={handleItemNameChange}
                         />
                     })}
                 </List>
@@ -350,8 +436,10 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
     )
 }
 
-const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, handleLine }) => {
+const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, handleLine, handleItemNameChange }) => {
     const [openMenu, setOpenMenu] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingText, setEditingText] = useState("")
 
     const triggers = {
         onMouseEnter: () => setOpenMenu(true),
@@ -361,6 +449,12 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
     const handleCheck = (e) => {
         const ifChecked = e.target.checked
         handleSubItemCheck(cardId, subItem.id, ifChecked)
+    }
+
+    const handleChangeName = () => {
+        setEditingText("")
+        setIsEditing(false)
+        handleItemNameChange(cardId, subItem.id, editingText)
     }
 
     // item?.line 只是为了兼容之前旧的数据，之后可以删掉？
@@ -382,9 +476,30 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                         }}
                     />
                 </ListItemPrefix>
-                <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
+                {isEditing ?
+                    <div className="relative flex w-full max-w-[24rem]">
+                        <Input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => { setEditingText(e.target.value) }}
+                            placeholder={subItem.taskName}
+                            className="!p-0 !border-none"
+                            labelProps={{
+                                className: "hidden"
+                            }}
+                        />
+                        <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                            <CheckIcon className="h-5 w-5" />
+                        </IconButton>
+                        <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                            <XMarkIcon className="h-5 w-5" />
+                        </IconButton>
+                    </div>
+                    :
+                    <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
+                }
             </label>
-            <ListItemSuffix className="h-full" {...triggers}>
+            {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
                 <Menu
                     open={openMenu}
                     handler={setOpenMenu}
@@ -398,12 +513,20 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                         <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover:opacity-100" />
                     </MenuHandler>
                     <MenuList>
-                        <MenuItem className="flex items-center gap-2">
-                            <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                        <MenuItem className="flex items-center gap-2" onClick={() => setIsEditing(true)}>
+                            <PencilSquareIcon className="h-5 w-5" />
+                            <Typography variant="small" className="font-normal">
+                                Edit
+                            </Typography>
+                        </MenuItem>
+                        <MenuItem className="p-0">
                             <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
-                                <Typography variant="small" className="font-normal">
-                                    Copy
-                                </Typography>
+                                <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
+                                    <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                                    <Typography variant="small" className="font-normal">
+                                        Copy
+                                    </Typography>
+                                </div>
                             </CopyToClipboard>
                         </MenuItem>
                         <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
@@ -420,6 +543,6 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                         </MenuItem>
                     </MenuList>
                 </Menu>
-            </ListItemSuffix>
+            </ListItemSuffix>}
         </ListItem>)
 }
