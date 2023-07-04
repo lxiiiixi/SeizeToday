@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
     Card, CardFooter, CardBody, CardHeader,
     Typography, List, ListItem, ListItemSuffix,
@@ -14,8 +14,9 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-const ResponsiveGridLayout = WidthProvider(Responsive);
-// const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
+
+
+
 
 // icon：https://heroicons.com/
 
@@ -56,6 +57,8 @@ export function Today2() {
     const [openDialog, setOpenDialog] = useState(false)
 
     const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
+
+    const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
 
 
     useEffect(() => {
