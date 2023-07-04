@@ -407,9 +407,10 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                         />
                     })}
                 </List>
-                <div className="hidden group-hover/card:block">
+                <div className="opacity-0 group-hover/card:opacity-100">
                     <Popover
-                        placement="top-end" animate={{
+                        placement="top-end"
+                        animate={{
                             mount: { scale: 1, x: 0, y: 0 },
                             unmount: { scale: 0, x: 120, y: 35 },
                         }}
@@ -417,7 +418,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                         <PopoverHandler onClick={() => setAddItemText("")}>
                             <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
                         </PopoverHandler>
-                        <PopoverContent >
+                        <PopoverContent className="group/card">
                             <div className="relative flex w-full max-w-[24rem]" >
                                 <Input
                                     label="Add a sub task"
@@ -564,31 +565,39 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
 
     const generateMarkdown = (data, ifDisplayFinished, ifGroup) => {
         console.log(data, ifDisplayFinished, ifGroup);
-        let markdown = "";
+        let markdown = ``;
         if (ifGroup) {
             data.forEach(element => {
-                markdown += '## ' + element.name + '\n'
-                element.subList.forEach(subItem => {
-                    if (ifDisplayFinished) {
-                        if (subItem.checked) markdown += '- ' + subItem.taskName + '\n'
-                    } else {
-                        markdown += `* [${subItem.checked ? 'x' : ' '}] ` + subItem.taskName + '\n'
-                    }
-                })
+                if (element.subList.length !== 0) {
+                    markdown += `## ${element.name} \n
+`
+                    element.subList.forEach(subItem => {
+                        if (ifDisplayFinished) {
+                            if (subItem.checked) markdown += `- ${subItem.taskName} \n
+`
+                        } else {
+                            markdown += `* [${subItem.checked ? 'x' : ' '}] ${subItem.taskName} \n
+`
+                        }
+                    })
+                }
             });
         } else {
             data.forEach(element => {
-                element.subList.forEach(subItem => {
-                    if (ifDisplayFinished) {
-                        if (subItem.checked) markdown += '- ' + element.name + ':' + subItem.taskName + ' \n'
-                    } else {
-                        markdown += '- ' + element.name + ':' + subItem.taskName + ' \n'
-                    }
-                })
+                if (element.subList.length !== 0) {
+                    element.subList.forEach(subItem => {
+                        if (ifDisplayFinished) {
+                            if (subItem.checked) markdown += `- ${element.name}:${subItem.taskName} \n
+`
+                        } else {
+                            markdown += `- ${element.name}:${subItem.taskName} \n
+`
+                        }
+                    })
+                }
             });
         }
 
-        console.log(markdown);
         return markdown
     }
 
@@ -598,14 +607,14 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
         <Button onClick={handleDialog} variant="gradient">
             Export
         </Button>
-        <Dialog open={openDialog} handler={handleDialog} size="xl">
+        <Dialog open={openDialog} handler={handleDialog} size="lg">
             <DialogHeader>Export Data Of Today</DialogHeader>
             <DialogBody divider>
                 <div className="flex justify-around  bg-gray-100 p-2 rounded-lg">
                     <Switch id='Finished' label="Display Finished Only" ripple={true} checked={isDisplayFinished} onChange={(e) => setIsDisplayFinished(e.target.checked)} />
                     <Switch id='Group' label="Group By Title" ripple={true} checked={isGroup} onChange={(e) => setIsGroup(e.target.checked)} />
                 </div>
-                <div className="markdownCss mt-4 max-h-[200px]">
+                <div className="markdownCss mt-4 max-h-[400px] overflow-scroll">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} children={markdonwText} />
                 </div>
             </DialogBody>
