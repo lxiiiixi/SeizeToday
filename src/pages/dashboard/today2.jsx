@@ -4,13 +4,16 @@ import {
     Typography, List, ListItem, ListItemSuffix,
     Checkbox, IconButton, Switch, Input, Button,
     Alert, Popover, PopoverHandler, PopoverContent,
-    Menu, MenuHandler, MenuList, MenuItem, ListItemPrefix
+    Menu, MenuHandler, MenuList, MenuItem, ListItemPrefix,
+    Dialog, DialogHeader, DialogBody, DialogFooter
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
 import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon, CheckIcon, PencilSquareIcon } from "@heroicons/react/24/solid";
 import TextareaAutosize from 'react-textarea-autosize';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 const ResponsiveGridLayout = WidthProvider(Responsive);
 // const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []);
 
@@ -50,6 +53,8 @@ export function Today2() {
     const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
+    const [openDialog, setOpenDialog] = useState(false)
+
     const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
 
 
@@ -225,7 +230,10 @@ export function Today2() {
 
             <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
                 <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
-                <Switch label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
+                <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
+                {/*  https://www.material-tailwind.com/docs/react/dialog */}
+                {/* 1. 首先添加一个弹窗   2.用整个组件中的数据拼装成一个markdown格式的文本 3.弹窗中显示几个按钮（是否值显示已完成的/是否使用嵌套列表的格式）  */}
+                <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => setOpenDialog((cur) => !cur)} />
                 <div className="relative flex w-full max-w-[24rem] ml-5" >
                     <Input
                         label="Add a card"
@@ -324,11 +332,11 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
 
     // 嵌套group：不生效 https://tailwindcss.com/docs/hover-focus-and-other-states#differentiating-nested-groups
     return (
-        <Card className="w-full h-full pt-2 pb-4">
+        <Card className="w-full h-full pt-2 pb-4 group/card">
             <CardHeader
                 variant="gradient"
                 color="gray"
-                className="grid h-10 place-items-center group"
+                className="grid h-10 place-items-center group/header"
             >
                 {isEditing ?
                     <div className="relative flex w-full max-w-[24rem]">
@@ -366,7 +374,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                         }}
                     >
                         <MenuHandler>
-                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover:opacity-100" />
+                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
                         </MenuHandler>
                         <MenuList>
                             <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
@@ -375,7 +383,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                                     Delete
                                 </Typography>
                             </MenuItem>
-                            <MenuItem className="flex items-center gap-2" onClick={() => setIsEditing(true)}>
+                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
                                 <PencilSquareIcon className="h-5 w-5" />
                                 <Typography variant="small" className="font-normal">
                                     Edit
@@ -399,39 +407,41 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                         />
                     })}
                 </List>
+                <div className="hidden group-hover/card:block">
+                    <Popover
+                        placement="top-end" animate={{
+                            mount: { scale: 1, x: 0, y: 0 },
+                            unmount: { scale: 0, x: 120, y: 35 },
+                        }}
+                    >
+                        <PopoverHandler onClick={() => setAddItemText("")}>
+                            <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
+                        </PopoverHandler>
+                        <PopoverContent >
+                            <div className="relative flex w-full max-w-[24rem]" >
+                                <Input
+                                    label="Add a sub task"
+                                    value={addItemText}
+                                    onChange={({ target }) => setAddItemText(target.value)}
+                                    className="pr-20"
+                                    containerProps={{
+                                        className: "min-w-0",
+                                    }}
+                                />
+                                <Button
+                                    size="sm"
+                                    color={addItemText ? "blue" : "blue-gray"}
+                                    disabled={!addItemText}
+                                    className="!absolute right-1 top-1 rounded"
+                                    onClick={handleAdd}
+                                >
+                                    +
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
             </CardBody>
-            <Popover
-                placement="top-end" animate={{
-                    mount: { scale: 1, x: 0, y: 0 },
-                    unmount: { scale: 0, x: 120, y: 35 },
-                }}
-            >
-                <PopoverHandler onClick={() => setAddItemText("")}>
-                    <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
-                </PopoverHandler>
-                <PopoverContent>
-                    <div className="relative flex w-full max-w-[24rem]" >
-                        <Input
-                            label="Add a sub task"
-                            value={addItemText}
-                            onChange={({ target }) => setAddItemText(target.value)}
-                            className="pr-20"
-                            containerProps={{
-                                className: "min-w-0",
-                            }}
-                        />
-                        <Button
-                            size="sm"
-                            color={addItemText ? "blue" : "blue-gray"}
-                            disabled={!addItemText}
-                            className="!absolute right-1 top-1 rounded"
-                            onClick={handleAdd}
-                        >
-                            +
-                        </Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
         </Card>
     )
 }
@@ -459,7 +469,7 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
 
     // item?.line 只是为了兼容之前旧的数据，之后可以删掉？
     return (
-        <ListItem ripple={false} className={`p-0 group ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
+        <ListItem ripple={false} className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
             <label
                 htmlFor="vertical-list-react"
                 className={`px-3 py-2 flex items-center w-full cursor-pointer`}
@@ -510,10 +520,10 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                     }}
                 >
                     <MenuHandler >
-                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover:opacity-100" />
+                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
                     </MenuHandler>
                     <MenuList>
-                        <MenuItem className="flex items-center gap-2" onClick={() => setIsEditing(true)}>
+                        <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
                             <PencilSquareIcon className="h-5 w-5" />
                             <Typography variant="small" className="font-normal">
                                 Edit
@@ -545,4 +555,75 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
                 </Menu>
             </ListItemSuffix>}
         </ListItem>)
+}
+
+const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
+
+    const [isDisplayFinished, setIsDisplayFinished] = useState(true) // true 表示只展示完成的
+    const [isGroup, setIsGroup] = useState(true) // true 表示按照卡片名称分组
+
+    const generateMarkdown = (data, ifDisplayFinished, ifGroup) => {
+        console.log(data, ifDisplayFinished, ifGroup);
+        let markdown = "";
+        if (ifGroup) {
+            data.forEach(element => {
+                markdown += '## ' + element.name + '\n'
+                element.subList.forEach(subItem => {
+                    if (ifDisplayFinished) {
+                        if (subItem.checked) markdown += '- ' + subItem.taskName + '\n'
+                    } else {
+                        markdown += `* [${subItem.checked ? 'x' : ' '}] ` + subItem.taskName + '\n'
+                    }
+                })
+            });
+        } else {
+            data.forEach(element => {
+                element.subList.forEach(subItem => {
+                    if (ifDisplayFinished) {
+                        if (subItem.checked) markdown += '- ' + element.name + ':' + subItem.taskName + ' \n'
+                    } else {
+                        markdown += '- ' + element.name + ':' + subItem.taskName + ' \n'
+                    }
+                })
+            });
+        }
+
+        console.log(markdown);
+        return markdown
+    }
+
+    const markdonwText = generateMarkdown(dataList, isDisplayFinished, isGroup)
+
+    return (<>
+        <Button onClick={handleDialog} variant="gradient">
+            Export
+        </Button>
+        <Dialog open={openDialog} handler={handleDialog} size="xl">
+            <DialogHeader>Export Data Of Today</DialogHeader>
+            <DialogBody divider>
+                <div className="flex justify-around  bg-gray-100 p-2 rounded-lg">
+                    <Switch id='Finished' label="Display Finished Only" ripple={true} checked={isDisplayFinished} onChange={(e) => setIsDisplayFinished(e.target.checked)} />
+                    <Switch id='Group' label="Group By Title" ripple={true} checked={isGroup} onChange={(e) => setIsGroup(e.target.checked)} />
+                </div>
+                <div className="markdownCss mt-4 max-h-[200px]">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} children={markdonwText} />
+                </div>
+            </DialogBody>
+            <DialogFooter>
+                <Button
+                    variant="text"
+                    color="red"
+                    onClick={handleDialog}
+                    className="mr-1"
+                >
+                    <span>Cancel</span>
+                </Button>
+                <CopyToClipboard text={markdonwText} onCopy={() => { }}>
+                    <Button variant="gradient" color="green" onClick={handleDialog}>
+                        <span>Copy</span>
+                    </Button>
+                </CopyToClipboard>
+            </DialogFooter>
+        </Dialog >
+    </>)
 }
