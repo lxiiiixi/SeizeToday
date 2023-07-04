@@ -562,6 +562,7 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
 
     const [isDisplayFinished, setIsDisplayFinished] = useState(true) // true 表示只展示完成的
     const [isGroup, setIsGroup] = useState(true) // true 表示按照卡片名称分组
+    const [isMarkdown, setIsMarkdown] = useState(false)
 
     const generateMarkdown = (data, ifDisplayFinished, ifGroup) => {
         console.log(data, ifDisplayFinished, ifGroup);
@@ -601,7 +602,46 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
         return markdown
     }
 
-    const markdonwText = generateMarkdown(dataList, isDisplayFinished, isGroup)
+    const generateText = (data, ifDisplayFinished, ifGroup) => {
+        let text = "";
+        if (ifGroup) {
+            data.forEach(element => {
+                if (element.subList.length !== 0) {
+                    element.subList.forEach(subItem => {
+                        if (ifDisplayFinished) {
+                            if (subItem.checked) text += "✅" + subItem.taskName + "\n"
+                        } else {
+                            if (subItem.checked) {
+                                text += "✅" + subItem.taskName + "\n"
+                            } else {
+                                text += "❌" + subItem.taskName + "\n"
+                            }
+                        }
+                    })
+                }
+            })
+        } else {
+            data.forEach(element => {
+                if (element.subList.length !== 0) {
+                    element.subList.forEach(subItem => {
+                        if (ifDisplayFinished) {
+                            if (subItem.checked) text += "✅" + element.name + ":" + subItem.taskName + "\n"
+                        } else {
+                            if (subItem.checked) {
+                                text += "✅" + element.name + ":" + subItem.taskName + "\n"
+                            } else {
+                                text += "❌" + element.name + ":" + subItem.taskName + "\n"
+                            }
+                        }
+                    })
+                }
+            });
+        }
+
+        return text
+    }
+
+    const markdonwText = isMarkdown ? generateMarkdown(dataList, isDisplayFinished, isGroup) : generateText(dataList, isDisplayFinished, isGroup)
 
     return (<>
         <Button onClick={handleDialog} variant="gradient">
@@ -613,9 +653,10 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
                 <div className="flex justify-around  bg-gray-100 p-2 rounded-lg">
                     <Switch id='Finished' label="Display Finished Only" ripple={true} checked={isDisplayFinished} onChange={(e) => setIsDisplayFinished(e.target.checked)} />
                     <Switch id='Group' label="Group By Title" ripple={true} checked={isGroup} onChange={(e) => setIsGroup(e.target.checked)} />
+                    <Switch id='Markdown' label="Is Markdown" ripple={true} checked={isMarkdown} onChange={(e) => setIsMarkdown(e.target.checked)} />
                 </div>
                 <div className="markdownCss mt-4 max-h-[400px] overflow-scroll">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} children={markdonwText} />
+                    {isMarkdown ? <ReactMarkdown remarkPlugins={[remarkGfm]} children={markdonwText} /> : <Typography>{markdonwText}</Typography>}
                 </div>
             </DialogBody>
             <DialogFooter>
