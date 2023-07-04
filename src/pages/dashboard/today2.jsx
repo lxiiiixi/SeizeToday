@@ -15,9 +15,6 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-
-
-
 // icon：https://heroicons.com/
 
 const layout = [
