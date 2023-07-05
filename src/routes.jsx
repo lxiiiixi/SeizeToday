@@ -6,7 +6,7 @@ import {
   ArrowRightOnRectangleIcon,
   UserPlusIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Tables, Notifications, Today, Today2 } from "@/pages/dashboard";
+import { Home, Profile, Tables, Notifications, Today, Today2, Kanban } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -52,6 +52,11 @@ export const routes = [
         name: "today2",
         path: "/today2",
         element: <Today2 />,
+      }, {
+        icon: <BellIcon {...icon} />,
+        name: "kanban",
+        path: "/kanban",
+        element: <Kanban />,
       },
     ],
   },
