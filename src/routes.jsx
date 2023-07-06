@@ -41,6 +41,12 @@ export const routes = [
         path: "/notifactions",
         element: <Notifications />,
       },
+       {
+        icon: <BellIcon {...icon} />,
+        name: "kanban",
+        path: "/kanban",
+        element: <Kanban />,
+      },
       {
         icon: <BellIcon {...icon} />,
         name: "today",
@@ -52,12 +58,7 @@ export const routes = [
         name: "today2",
         path: "/today2",
         element: <Today2 />,
-      }, {
-        icon: <BellIcon {...icon} />,
-        name: "kanban",
-        path: "/kanban",
-        element: <Kanban />,
-      },
+      }
     ],
   },
   {

@@ -122,7 +122,8 @@ export function Kanban() {
                 <div className=" bg-blue-gray-100 flex w-full min-h-screen">
                     {Object.entries(columns).map(([columnId, column], index) => {
                         return (
-                            isMounted ? <Droppable key={columnId} droppableId={columnId}>
+                            // isMounted ? 
+                            <Droppable key={columnId} droppableId={columnId}>
                                 {(provided, snapshot) => {
                                     // console.log(column.items);
                                     return (<div
@@ -141,7 +142,7 @@ export function Kanban() {
                                     )
                                 }}
                             </Droppable>
-                                : ""
+                                // : ""
                         );
                     })}
                 </div>
