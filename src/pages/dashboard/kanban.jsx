@@ -69,6 +69,8 @@ export function Kanban() {
     const [columns, setColumns] = useState(columnsFromBackend);
     const [isMounted, setIsMounted] = useState(false);
 
+    console.log(columns);
+
     useEffect(() => {
         setIsMounted(true);
     }, []);
@@ -122,27 +124,27 @@ export function Kanban() {
                 <div className=" bg-blue-gray-100 flex w-full min-h-screen">
                     {Object.entries(columns).map(([columnId, column], index) => {
                         return (
-                            // isMounted ? 
-                            <Droppable key={columnId} droppableId={columnId}>
-                                {(provided, snapshot) => {
-                                    // console.log(column.items);
-                                    return (<div
-                                        className=" max-h-10 flex flex-col bg-pink-50 min-w-[300px] mx-6 min-h-[500px] p-4"
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                    >
-                                        <p>{column.title}</p>
-                                        {column.items.map((item, index) => {
-                                            // console.log(item);
-                                            return (<TaskCard key={item.id} item={item} index={index} />
-                                            )
-                                        })}
-                                        {provided.placeholder}
-                                    </div>
-                                    )
-                                }}
-                            </Droppable>
-                                // : ""
+                            isMounted ?
+                                <Droppable key={columnId} droppableId={columnId}>
+                                    {(provided, snapshot) => {
+                                        // console.log(column.items);
+                                        return (<div
+                                            className=" max-h-10 flex flex-col bg-pink-50 min-w-[300px] mx-6 min-h-[500px] p-4"
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                        >
+                                            <p>{column.title}</p>
+                                            {column.items.map((item, index) => {
+                                                // console.log(item);
+                                                return (<TaskCard key={item.id} item={item} index={index} />
+                                                )
+                                            })}
+                                            {provided.placeholder}
+                                        </div>
+                                        )
+                                    }}
+                                </Droppable>
+                                : ""
                         );
                     })}
                 </div>

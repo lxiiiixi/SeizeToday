@@ -14,6 +14,8 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
 
 // icon：https://heroicons.com/
 
@@ -47,15 +49,24 @@ const data = [
 export function Today2() {
     const [isDraggable, setIsDraggable] = useState(false);
     const [gridLayout, setGridLayout] = useState(JSON.parse(localStorage.getItem("gridLayout")) || defaultLayout);
-    const [dataList, setDataList] = useState(JSON.parse(localStorage.getItem("dataList")) || []);
+    const [dataList, setDataList] = useState(JSON.parse(localStorage.getItem("dataList")) || {});
     const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
     const [openDialog, setOpenDialog] = useState(false)
+    const [isMounted, setIsMounted] = useState(false); // fix the dnd bug
+
 
     const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
 
+
     const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
+
+
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
 
     useEffect(() => {
@@ -67,6 +78,7 @@ export function Today2() {
             textareaElement.focus();
         };
         targetElement.addEventListener('click', handleClick);
+
         return () => {
             targetElement.removeEventListener('click', handleClick);
         };
@@ -82,7 +94,7 @@ export function Today2() {
                 subList: []
             }
             const newLayout = { i: newId, x: 0, y: 0, w: 2, h: 2 }
-            setDataList(oldList => [...oldList, newItem])
+            setDataList(oldList => ({ ...oldList, [newId]: newItem }))
             setGridLayout((oldLayout) => {
                 return {
                     lg: [...oldLayout.lg, newLayout],
@@ -104,203 +116,249 @@ export function Today2() {
     }
 
     const handleDeleteCard = (id) => {
-        const newList = dataList.filter(item => item.id !== id)
-        setDataList(newList)
+        // const newList = dataList.filter(item => item.id !== id)
+        setDataList((oldData) => {
+            const newList = { ...oldData }
+            delete newList[id]
+            return newList
+        })
     }
 
     const handleSubItemAdd = (id, text) => {
-        const newList = dataList.map(item => {
-            if (item.id === id) {
-                item.subList.push({
-                    id: uuidv4(),
-                    taskName: text,
-                    checked: false
-                })
-            }
-            return item
+        setDataList((oldData) => {
+            return ({
+                ...oldData,
+                [id]: {
+                    ...oldData[id],
+                    subList: [...oldData[id].subList, { id: uuidv4(), taskName: text, checked: false }]
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleSubItemCheck = (cardId, taskId, ifChecked) => {
-        const newList = dataList.map(card => {
-            if (card.id === cardId) {
-                const newSublist = card.subList.map(subItem => {
-                    if (subItem.id === taskId) {
-                        subItem.checked = ifChecked
-                    }
-                    return subItem
-                })
-                return {
-                    ...card,
-                    subList: newSublist
-                };
-            }
-            return card
+        setDataList((oldData) => {
+            return ({
+                ...oldData,
+                [cardId]: {
+                    ...oldData[cardId],
+                    subList: oldData[cardId].subList.map(subItem => {
+                        if (subItem.id === taskId) {
+                            subItem.checked = ifChecked
+                        }
+                        return subItem
+                    })
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleLine = (cardId, taskId) => {
-        const newList = dataList.map(card => {
-            if (card.id === cardId) {
-                const newSublist = card.subList.map(subItem => {
-                    if (subItem.id === taskId) {
-                        subItem.line = !subItem.line
-                    }
-                    return subItem
-                })
-                return {
-                    ...card,
-                    subList: newSublist
-                };
-            }
-            return card
+        setDataList((oldData) => {
+            return ({
+                ...oldData,
+                [cardId]: {
+                    ...oldData[cardId],
+                    subList: oldData[cardId].subList.map(subItem => {
+                        if (subItem.id === taskId) {
+                            subItem.line = !subItem.line
+                        }
+                        return subItem
+                    })
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleDeleteTask = (cardId, taskId) => {
-        const newList = dataList.map(item => {
-            if (item.id === cardId) {
-                const subList = item.subList.filter(subItem => subItem.id !== taskId);
-                return { ...item, subList };
-            }
-            return item
+        setDataList((dataList) => {
+            return ({
+                ...dataList,
+                [cardId]: {
+                    ...dataList[cardId],
+                    subList: dataList[cardId].subList.filter(subItem => subItem.id !== taskId)
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleNamechange = (id, name) => {
-        const newList = dataList.map(item => {
-            if (item.id === id) {
-                item.name = name
-            }
-            return item
+        setDataList((dataList) => {
+            return ({
+                ...dataList,
+                [id]: {
+                    ...dataList[id],
+                    name: name
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleItemNameChange = (cardId, taskId, text) => {
-        const newList = dataList.map(card => {
-            if (card.id === cardId) {
-                const newSublist = card.subList.map(subItem => {
-                    if (subItem.id === taskId) {
-                        subItem.taskName = text
-                    }
-                    return subItem
-                })
-                return {
-                    ...card,
-                    subList: newSublist
-                };
-            }
-            return card
+        setDataList((dataList) => {
+            return ({
+                ...dataList,
+                [cardId]: {
+                    ...dataList[cardId],
+                    subList: dataList[cardId].subList.map(subItem => {
+                        if (subItem.id === taskId) {
+                            subItem.taskName = text
+                        }
+                        return subItem
+                    })
+                }
+            })
         })
-        setDataList(newList)
     }
 
     const handleLayoutChange = (layout, layouts) => {
-        // console.log(layout, layouts);
         setGridLayout(layouts)
     };
 
+    const onDragEnd = (result, columns, setColumns) => {
+
+        console.log(result);
+
+        if (!result.destination) return;
+        const { source, destination } = result;
+        if (source.droppableId !== destination.droppableId) {
+            const sourceColumn = columns[source.droppableId];
+            const destColumn = columns[destination.droppableId];
+            const sourceItems = [...sourceColumn.subList];
+            const destItems = [...destColumn.subList];
+            const [removed] = sourceItems.splice(source.index, 1);
+            destItems.splice(destination.index, 0, removed);
+            setColumns({
+                ...columns,
+                [source.droppableId]: {
+                    ...sourceColumn,
+                    subList: sourceItems,
+                },
+                [destination.droppableId]: {
+                    ...destColumn,
+                    subList: destItems,
+                },
+            });
+        } else {
+            const column = columns[source.droppableId];
+            const copiedItems = [...column.subList];
+            const [removed] = copiedItems.splice(source.index, 1);
+            copiedItems.splice(destination.index, 0, removed);
+            setColumns({
+                ...columns,
+                [source.droppableId]: {
+                    ...column,
+                    subList: copiedItems,
+                },
+            });
+        }
+    };
+
+
     // https://github.com/react-grid-layout/react-grid-layout#responsive-grid-layout-props
     return (
-        <div className="py-4 bg-purple-50 rounded-lg min-h-screen">
-            {/* alert */}
-            <Alert
-                open={open}
-                color="green"
-                className="max-w-screen-md fixed bottom-4 right-4 z-50"
-                icon={<CheckCircleIcon className="mt-px h-6 w-6" />}
-                animate={{
-                    mount: { x: 0 },
-                    unmount: { x: 100 },
-                }}
-                onClose={() => setOpen(false)}
-            >
-                <Typography variant="h5" color="white">
-                    Success
-                </Typography>
-                <Typography color="white" className="mt-2 font-normal">
-                    Your data has been saved.
-                </Typography>
-            </Alert>
+        <DragDropContext
+            onDragEnd={(result) => onDragEnd(result, columns, setColumns)}
+        >
+            <div className="py-4 bg-purple-50 rounded-lg min-h-screen">
+                {/* alert */}
+                <Alert
+                    open={open}
+                    color="green"
+                    className="max-w-screen-md fixed bottom-4 right-4 z-50"
+                    icon={<CheckCircleIcon className="mt-px h-6 w-6" />}
+                    animate={{
+                        mount: { x: 0 },
+                        unmount: { x: 100 },
+                    }}
+                    onClose={() => setOpen(false)}
+                >
+                    <Typography variant="h5" color="white">
+                        Success
+                    </Typography>
+                    <Typography color="white" className="mt-2 font-normal">
+                        Your data has been saved.
+                    </Typography>
+                </Alert>
 
-            <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
-                <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
-                <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
-                {/*  https://www.material-tailwind.com/docs/react/dialog */}
-                {/* 1. 首先添加一个弹窗   2.用整个组件中的数据拼装成一个markdown格式的文本 3.弹窗中显示几个按钮（是否值显示已完成的/是否使用嵌套列表的格式）  */}
-                <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => setOpenDialog((cur) => !cur)} />
-                <div className="relative flex w-full max-w-[24rem] ml-5" >
-                    <Input
-                        label="Add a card"
-                        value={addItemText}
-                        onChange={({ target }) => setAddItemText(target.value)}
-                        className="pr-20"
-                        containerProps={{
-                            className: "min-w-0",
-                        }}
-                    />
-                    <Button
-                        size="sm"
-                        color={addItemText ? "blue" : "blue-gray"}
-                        disabled={!addItemText}
-                        className="!absolute right-1 top-1 rounded"
-                        onClick={addCardItem}
-                    >
-                        +
-                    </Button>
-                </div>
-            </div>
-            <ResponsiveGridLayout
-                layouts={gridLayout}
-                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                cols={{ lg: 8, md: 6, sm: 4, xs: 4, xxs: 2 }}
-                // layout={gridLayout}
-                // cols={8}
-                rowHeight={150}
-                onLayoutChange={handleLayoutChange}
-                isDraggable={isDraggable}
-            >
-                {dataList.map((item) => (
-                    <div className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`} key={item.id}>
-                        <DraggableCard
-                            key={item.id}
-                            cardData={item}
-                            handleDeleteCard={handleDeleteCard}
-                            handleSubItemAdd={handleSubItemAdd}
-                            handleSubItemCheck={handleSubItemCheck}
-                            handleDeleteTask={handleDeleteTask}
-                            handleLine={handleLine}
-                            handleNamechange={handleNamechange}
-                            handleItemNameChange={handleItemNameChange}
+                <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
+                    <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
+                    <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
+                    <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => setOpenDialog((cur) => !cur)} />
+                    <div className="relative flex w-full max-w-[24rem] ml-5" >
+                        <Input
+                            label="Add a card"
+                            value={addItemText}
+                            onChange={({ target }) => setAddItemText(target.value)}
+                            className="pr-20"
+                            containerProps={{
+                                className: "min-w-0",
+                            }}
                         />
-                    </div>
-                ))}
-                <div className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`} key="summary">
-                    <Card className="w-full h-full pt-2 pb-4">
-                        <CardHeader
-                            variant="gradient"
-                            color="red"
-                            className="grid h-10 place-items-center"
+                        <Button
+                            size="sm"
+                            color={addItemText ? "blue" : "blue-gray"}
+                            disabled={!addItemText}
+                            className="!absolute right-1 top-1 rounded"
+                            onClick={addCardItem}
                         >
-                            Summary
-                        </CardHeader>
-                        <CardBody className="p-2 pb-0 h-full" id='test'>
-                            <TextareaAutosize
-                                minRows={4}
-                                value={summaryText}
-                                onChange={(e) => setSummaryText(e.target.value)}
-                                className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-light"
-                            />
-                        </CardBody>
-                    </Card>
+                            +
+                        </Button>
+                    </div>
                 </div>
-            </ResponsiveGridLayout>
-        </div>
+                <ResponsiveGridLayout
+                    layouts={gridLayout}
+                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                    cols={{ lg: 8, md: 6, sm: 4, xs: 4, xxs: 2 }}
+                    // layout={gridLayout}
+                    // cols={8}
+                    rowHeight={150}
+                    onLayoutChange={handleLayoutChange}
+                    isDraggable={isDraggable}
+                >
+                    {Object.entries(dataList).map(([dataKey, dataValue], index) => {
+                        return (
+                            <div
+                                className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`}
+                                key={dataKey}
+                            >
+                                <DraggableCard
+                                    key={dataKey}
+                                    cardData={dataValue}
+                                    handleDeleteCard={handleDeleteCard}
+                                    handleSubItemAdd={handleSubItemAdd}
+                                    handleSubItemCheck={handleSubItemCheck}
+                                    handleDeleteTask={handleDeleteTask}
+                                    handleLine={handleLine}
+                                    handleNamechange={handleNamechange}
+                                    handleItemNameChange={handleItemNameChange}
+                                />
+                                {/* {provided.placeholder} */}
+                            </div>
+                        )
+                    })}
+                    <div className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`} key="summary">
+                        <Card className="w-full h-full pt-2 pb-4">
+                            <CardHeader
+                                variant="gradient"
+                                color="red"
+                                className="grid h-10 place-items-center"
+                            >
+                                Summary
+                            </CardHeader>
+                            <CardBody className="p-2 pb-0 h-full" id='test'>
+                                <TextareaAutosize
+                                    minRows={4}
+                                    value={summaryText}
+                                    onChange={(e) => setSummaryText(e.target.value)}
+                                    className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-light"
+                                />
+                            </CardBody>
+                        </Card>
+                    </div>
+                </ResponsiveGridLayout>
+            </div>
+        </DragDropContext>
     )
 }
 
@@ -332,118 +390,127 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
 
     // 嵌套group：不生效 https://tailwindcss.com/docs/hover-focus-and-other-states#differentiating-nested-groups
     return (
-        <Card className="w-full h-full pt-2 pb-4 group/card">
-            <CardHeader
-                variant="gradient"
-                color="gray"
-                className="grid h-10 place-items-center group/header"
-            >
-                {isEditing ?
-                    <div className="relative flex w-full max-w-[24rem]">
-                        <Input
-                            type="text"
-                            value={editingText}
-                            onChange={(e) => { setEditingText(e.target.value) }}
-                            placeholder={cardData.name}
-                            className="!border-none"
-                            labelProps={{
-                                className: "hidden"
-                            }}
-                        />
-                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
-                            <CheckIcon className="h-5 w-5" />
-                        </IconButton>
-                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
-                            <XMarkIcon className="h-5 w-5" />
-                        </IconButton>
-                    </div>
-                    :
-                    <Typography variant="h6" color="white">
-                        {cardData.name}
-                    </Typography>
-                }
-                {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
-                {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
-                    <Menu
-                        open={openMenu}
-                        handler={setOpenMenu}
-                        placement="bottom-end"
-                        animate={{
-                            mount: { y: 0 },
-                            unmount: { y: 25 },
-                        }}
+        <Droppable key={cardData.id} droppableId={cardData.id}>
+            {(provided, snapshot) => {
+                // console.log(column.items);
+                return (<Card
+                    className="w-full h-full pt-2 pb-4 group/card"
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                >
+                    <CardHeader
+                        variant="gradient"
+                        color="gray"
+                        className="grid h-10 place-items-center group/header"
                     >
-                        <MenuHandler>
-                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
-                        </MenuHandler>
-                        <MenuList>
-                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
-                                <XMarkIcon className="h-5 w-5" />
-                                <Typography variant="small" className="font-normal">
-                                    Delete
-                                </Typography>
-                            </MenuItem>
-                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
-                                <PencilSquareIcon className="h-5 w-5" />
-                                <Typography variant="small" className="font-normal">
-                                    Edit
-                                </Typography>
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                </ListItemSuffix>}
-            </CardHeader>
-            <CardBody className="flex flex-col p-0 overflow-scroll">
-                <List ripple={true}>
-                    {cardData.subList.map(item => {
-                        return <CheckListItem
-                            key={item.id}
-                            cardId={cardData.id}
-                            subItem={item}
-                            handleSubItemCheck={handleSubItemCheck}
-                            handleDeleteTask={handleDeleteTask}
-                            handleLine={handleLine}
-                            handleItemNameChange={handleItemNameChange}
-                        />
-                    })}
-                </List>
-                <div className="opacity-0 group-hover/card:opacity-100">
-                    <Popover
-                        placement="top-end"
-                        animate={{
-                            mount: { scale: 1, x: 0, y: 0 },
-                            unmount: { scale: 0, x: 120, y: 35 },
-                        }}
-                    >
-                        <PopoverHandler onClick={() => setAddItemText("")}>
-                            <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
-                        </PopoverHandler>
-                        <PopoverContent className="group/card">
-                            <div className="relative flex w-full max-w-[24rem]" >
+                        {isEditing ?
+                            <div className="relative flex w-full max-w-[24rem]">
                                 <Input
-                                    label="Add a sub task"
-                                    value={addItemText}
-                                    onChange={({ target }) => setAddItemText(target.value)}
-                                    className="pr-20"
-                                    containerProps={{
-                                        className: "min-w-0",
+                                    type="text"
+                                    value={editingText}
+                                    onChange={(e) => { setEditingText(e.target.value) }}
+                                    placeholder={cardData.name}
+                                    className="!border-none"
+                                    labelProps={{
+                                        className: "hidden"
                                     }}
                                 />
-                                <Button
-                                    size="sm"
-                                    color={addItemText ? "blue" : "blue-gray"}
-                                    disabled={!addItemText}
-                                    className="!absolute right-1 top-1 rounded"
-                                    onClick={handleAdd}
-                                >
-                                    +
-                                </Button>
+                                <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                    <CheckIcon className="h-5 w-5" />
+                                </IconButton>
+                                <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                    <XMarkIcon className="h-5 w-5" />
+                                </IconButton>
                             </div>
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            </CardBody>
-        </Card>
+                            :
+                            <Typography variant="h6" color="white">
+                                {cardData.name}
+                            </Typography>
+                        }
+                        {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
+                        {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
+                            <Menu
+                                open={openMenu}
+                                handler={setOpenMenu}
+                                placement="bottom-end"
+                                animate={{
+                                    mount: { y: 0 },
+                                    unmount: { y: 25 },
+                                }}
+                            >
+                                <MenuHandler>
+                                    <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
+                                </MenuHandler>
+                                <MenuList>
+                                    <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
+                                        <XMarkIcon className="h-5 w-5" />
+                                        <Typography variant="small" className="font-normal">
+                                            Delete
+                                        </Typography>
+                                    </MenuItem>
+                                    <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
+                                        <PencilSquareIcon className="h-5 w-5" />
+                                        <Typography variant="small" className="font-normal">
+                                            Edit
+                                        </Typography>
+                                    </MenuItem>
+                                </MenuList>
+                            </Menu>
+                        </ListItemSuffix>}
+                    </CardHeader>
+                    <CardBody className="flex flex-col p-0 overflow-scroll">
+                        <List ripple={true}>
+                            {cardData.subList.map(item => {
+                                return <CheckListItem
+                                    key={item.id}
+                                    cardId={cardData.id}
+                                    subItem={item}
+                                    handleSubItemCheck={handleSubItemCheck}
+                                    handleDeleteTask={handleDeleteTask}
+                                    handleLine={handleLine}
+                                    handleItemNameChange={handleItemNameChange}
+                                />
+                            })}
+                        </List>
+                        <div className="opacity-0 group-hover/card:opacity-100">
+                            <Popover
+                                placement="top-end"
+                                animate={{
+                                    mount: { scale: 1, x: 0, y: 0 },
+                                    unmount: { scale: 0, x: 120, y: 35 },
+                                }}
+                            >
+                                <PopoverHandler onClick={() => setAddItemText("")}>
+                                    <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
+                                </PopoverHandler>
+                                <PopoverContent className="group/card">
+                                    <div className="relative flex w-full max-w-[24rem]" >
+                                        <Input
+                                            label="Add a sub task"
+                                            value={addItemText}
+                                            onChange={({ target }) => setAddItemText(target.value)}
+                                            className="pr-20"
+                                            containerProps={{
+                                                className: "min-w-0",
+                                            }}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            color={addItemText ? "blue" : "blue-gray"}
+                                            disabled={!addItemText}
+                                            className="!absolute right-1 top-1 rounded"
+                                            onClick={handleAdd}
+                                        >
+                                            +
+                                        </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    </CardBody>
+                </Card>)
+            }}
+        </Droppable>
     )
 }
 
@@ -470,92 +537,95 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
 
     // item?.line 只是为了兼容之前旧的数据，之后可以删掉？
     return (
-        <ListItem ripple={false} className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
-            <label
-                htmlFor="vertical-list-react"
-                className={`px-3 py-2 flex items-center w-full cursor-pointer`}
-            >
-                <ListItemPrefix className="mr-3">
-                    <Checkbox
-                        id={subItem.id}
-                        ripple={false}
-                        className="hover:before:opacity-0 p-0"
-                        checked={subItem.checked}
-                        onChange={handleCheck}
-                        containerProps={{
-                            className: "p-0"
-                        }}
-                    />
-                </ListItemPrefix>
-                {isEditing ?
-                    <div className="relative flex w-full max-w-[24rem]">
-                        <Input
-                            type="text"
-                            value={editingText}
-                            onChange={(e) => { setEditingText(e.target.value) }}
-                            placeholder={subItem.taskName}
-                            className="!p-0 !border-none"
-                            labelProps={{
-                                className: "hidden"
+        <Draggable key={subItem.id} draggableId={subItem.id}>
+            <ListItem ripple={false} className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
+                <label
+                    htmlFor="vertical-list-react"
+                    className={`px-3 py-2 flex items-center w-full cursor-pointer`}
+                >
+                    <ListItemPrefix className="mr-3">
+                        <Checkbox
+                            id={subItem.id}
+                            ripple={false}
+                            className="hover:before:opacity-0 p-0"
+                            checked={subItem.checked}
+                            onChange={handleCheck}
+                            containerProps={{
+                                className: "p-0"
                             }}
                         />
-                        <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
-                            <CheckIcon className="h-5 w-5" />
-                        </IconButton>
-                        <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
-                            <XMarkIcon className="h-5 w-5" />
-                        </IconButton>
-                    </div>
-                    :
-                    <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
-                }
-            </label>
-            {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
-                <Menu
-                    open={openMenu}
-                    handler={setOpenMenu}
-                    placement="bottom-end"
-                    animate={{
-                        mount: { y: 0 },
-                        unmount: { y: 25 },
-                    }}
-                >
-                    <MenuHandler >
-                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
-                    </MenuHandler>
-                    <MenuList>
-                        <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
-                            <PencilSquareIcon className="h-5 w-5" />
-                            <Typography variant="small" className="font-normal">
-                                Edit
-                            </Typography>
-                        </MenuItem>
-                        <MenuItem className="p-0">
-                            <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
-                                <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
-                                    <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
-                                    <Typography variant="small" className="font-normal">
-                                        Copy
-                                    </Typography>
-                                </div>
-                            </CopyToClipboard>
-                        </MenuItem>
-                        <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
-                            <TrashIcon strokeWidth={2} className="h-4 w-4" />
-                            <Typography variant="small" className="font-normal">
-                                Delete
-                            </Typography>
-                        </MenuItem>
-                        <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
-                            <MinusIcon strokeWidth={2} className="h-6 w-4" />
-                            <Typography variant="small" className="font-normal">
-                                Mark Line
-                            </Typography>
-                        </MenuItem>
-                    </MenuList>
-                </Menu>
-            </ListItemSuffix>}
-        </ListItem>)
+                    </ListItemPrefix>
+                    {isEditing ?
+                        <div className="relative flex w-full max-w-[24rem]">
+                            <Input
+                                type="text"
+                                value={editingText}
+                                onChange={(e) => { setEditingText(e.target.value) }}
+                                placeholder={subItem.taskName}
+                                className="!p-0 !border-none"
+                                labelProps={{
+                                    className: "hidden"
+                                }}
+                            />
+                            <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                <CheckIcon className="h-5 w-5" />
+                            </IconButton>
+                            <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                <XMarkIcon className="h-5 w-5" />
+                            </IconButton>
+                        </div>
+                        :
+                        <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
+                    }
+                </label>
+                {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
+                    <Menu
+                        open={openMenu}
+                        handler={setOpenMenu}
+                        placement="bottom-end"
+                        animate={{
+                            mount: { y: 0 },
+                            unmount: { y: 25 },
+                        }}
+                    >
+                        <MenuHandler >
+                            <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
+                        </MenuHandler>
+                        <MenuList>
+                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
+                                <PencilSquareIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Edit
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem className="p-0">
+                                <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
+                                    <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
+                                        <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                                        <Typography variant="small" className="font-normal">
+                                            Copy
+                                        </Typography>
+                                    </div>
+                                </CopyToClipboard>
+                            </MenuItem>
+                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
+                                <TrashIcon strokeWidth={2} className="h-4 w-4" />
+                                <Typography variant="small" className="font-normal">
+                                    Delete
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
+                                <MinusIcon strokeWidth={2} className="h-6 w-4" />
+                                <Typography variant="small" className="font-normal">
+                                    Mark Line
+                                </Typography>
+                            </MenuItem>
+                        </MenuList>
+                    </Menu>
+                </ListItemSuffix>}
+            </ListItem>
+        </Draggable>
+    )
 }
 
 const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
@@ -568,31 +638,31 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
         console.log(data, ifDisplayFinished, ifGroup);
         let markdown = ``;
         if (ifGroup) {
-            data.forEach(element => {
+            Object.entries(data).forEach(([key, element]) => {
                 if (element.subList.length !== 0) {
                     markdown += `## ${element.name} \n
-`
+        `
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
                             if (subItem.checked) markdown += `- ${subItem.taskName} \n
-`
+        `
                         } else {
                             markdown += `* [${subItem.checked ? 'x' : ' '}] ${subItem.taskName} \n
-`
+        `
                         }
                     })
                 }
             });
         } else {
-            data.forEach(element => {
+            Object.entries(data).forEach(([key, element]) => {
                 if (element.subList.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
                             if (subItem.checked) markdown += `- ${element.name}:${subItem.taskName} \n
-`
+        `
                         } else {
                             markdown += `- ${element.name}:${subItem.taskName} \n
-`
+        `
                         }
                     })
                 }
@@ -603,9 +673,10 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
     }
 
     const generateText = (data, ifDisplayFinished, ifGroup) => {
+        console.log(data, ifDisplayFinished, ifGroup);
         let text = "";
         if (ifGroup) {
-            data.forEach(element => {
+            Object.entries(data).forEach(([key, element]) => {
                 if (element.subList.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
@@ -621,7 +692,7 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
                 }
             })
         } else {
-            data.forEach(element => {
+            Object.entries(data).forEach(([key, element]) => {
                 if (element.subList.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
@@ -641,7 +712,15 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
         return text
     }
 
-    const markdonwText = isMarkdown ? generateMarkdown(dataList, isDisplayFinished, isGroup) : generateText(dataList, isDisplayFinished, isGroup)
+    const markdonwText = openDialog ?
+        (
+            isMarkdown ?
+                generateMarkdown(dataList, isDisplayFinished, isGroup)
+                :
+                generateText(dataList, isDisplayFinished, isGroup)
+        )
+        :
+        ""
 
     return (<>
         <Button onClick={handleDialog} variant="gradient">
