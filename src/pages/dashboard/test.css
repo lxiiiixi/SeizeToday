@@ -1,0 +1,12 @@
+.draggable {
+  top: auto !important;
+  left: auto !important;
+}
+
+[data-rbd-drag-handle-context-id="3"] {
+  position: static !important;
+}
+
+#draggableItem {
+  position: static !important;
+}

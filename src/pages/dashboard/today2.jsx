@@ -15,6 +15,7 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import "./test.css"
 
 
 // icon：https://heroicons.com/
@@ -54,7 +55,6 @@ export function Today2() {
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
     const [openDialog, setOpenDialog] = useState(false)
-    const [isMounted, setIsMounted] = useState(false); // fix the dnd bug
 
 
     const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
@@ -63,10 +63,6 @@ export function Today2() {
     const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
 
 
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
 
     useEffect(() => {
@@ -258,7 +254,7 @@ export function Today2() {
     // https://github.com/react-grid-layout/react-grid-layout#responsive-grid-layout-props
     return (
         <DragDropContext
-            onDragEnd={(result) => onDragEnd(result, columns, setColumns)}
+            onDragEnd={(result) => onDragEnd(result, dataList, setDataList)}
         >
             <div className="py-4 bg-purple-50 rounded-lg min-h-screen">
                 {/* alert */}
@@ -318,6 +314,8 @@ export function Today2() {
                 >
                     {Object.entries(dataList).map(([dataKey, dataValue], index) => {
                         return (
+                            // !transform-none fix the bug of draggable item offset from mouse cursor
+                            // https://github.com/atlassian/react-beautiful-dnd/issues/1003#issuecomment-762746127
                             <div
                                 className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`}
                                 key={dataKey}
@@ -333,7 +331,6 @@ export function Today2() {
                                     handleNamechange={handleNamechange}
                                     handleItemNameChange={handleItemNameChange}
                                 />
-                                {/* {provided.placeholder} */}
                             </div>
                         )
                     })}
@@ -370,6 +367,12 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
     const [editingText, setEditingText] = useState("")
     const [addItemText, setAddItemText] = useState("")
     const [openMenu, setOpenMenu] = useState(false);
+    const [isMounted, setIsMounted] = useState(false); // fix the dnd bug
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
 
     const triggers = {
         onMouseEnter: () => setOpenMenu(true),
@@ -388,133 +391,141 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
         setIsEditing(false)
     }
 
-    // 嵌套group：不生效 https://tailwindcss.com/docs/hover-focus-and-other-states#differentiating-nested-groups
     return (
-        <Droppable key={cardData.id} droppableId={cardData.id}>
+        isMounted ? <Droppable
+            key={cardData.id}
+            droppableId={cardData.id}
+        >
             {(provided, snapshot) => {
                 // console.log(column.items);
-                return (<Card
-                    className="w-full h-full pt-2 pb-4 group/card"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                >
-                    <CardHeader
-                        variant="gradient"
-                        color="gray"
-                        className="grid h-10 place-items-center group/header"
+                return (
+                    <div
+                        className="w-full h-full"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
                     >
-                        {isEditing ?
-                            <div className="relative flex w-full max-w-[24rem]">
-                                <Input
-                                    type="text"
-                                    value={editingText}
-                                    onChange={(e) => { setEditingText(e.target.value) }}
-                                    placeholder={cardData.name}
-                                    className="!border-none"
-                                    labelProps={{
-                                        className: "hidden"
-                                    }}
-                                />
-                                <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
-                                    <CheckIcon className="h-5 w-5" />
-                                </IconButton>
-                                <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
-                                    <XMarkIcon className="h-5 w-5" />
-                                </IconButton>
-                            </div>
-                            :
-                            <Typography variant="h6" color="white">
-                                {cardData.name}
-                            </Typography>
-                        }
-                        {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
-                        {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
-                            <Menu
-                                open={openMenu}
-                                handler={setOpenMenu}
-                                placement="bottom-end"
-                                animate={{
-                                    mount: { y: 0 },
-                                    unmount: { y: 25 },
-                                }}
+                        <Card className="w-full h-full  pt-2 pb-4 group/card">
+                            <CardHeader
+                                variant="gradient"
+                                color="gray"
+                                className="grid h-10 place-items-center group/header"
                             >
-                                <MenuHandler>
-                                    <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
-                                </MenuHandler>
-                                <MenuList>
-                                    <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
-                                        <XMarkIcon className="h-5 w-5" />
-                                        <Typography variant="small" className="font-normal">
-                                            Delete
-                                        </Typography>
-                                    </MenuItem>
-                                    <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
-                                        <PencilSquareIcon className="h-5 w-5" />
-                                        <Typography variant="small" className="font-normal">
-                                            Edit
-                                        </Typography>
-                                    </MenuItem>
-                                </MenuList>
-                            </Menu>
-                        </ListItemSuffix>}
-                    </CardHeader>
-                    <CardBody className="flex flex-col p-0 overflow-scroll">
-                        <List ripple={true}>
-                            {cardData.subList.map(item => {
-                                return <CheckListItem
-                                    key={item.id}
-                                    cardId={cardData.id}
-                                    subItem={item}
-                                    handleSubItemCheck={handleSubItemCheck}
-                                    handleDeleteTask={handleDeleteTask}
-                                    handleLine={handleLine}
-                                    handleItemNameChange={handleItemNameChange}
-                                />
-                            })}
-                        </List>
-                        <div className="opacity-0 group-hover/card:opacity-100">
-                            <Popover
-                                placement="top-end"
-                                animate={{
-                                    mount: { scale: 1, x: 0, y: 0 },
-                                    unmount: { scale: 0, x: 120, y: 35 },
-                                }}
-                            >
-                                <PopoverHandler onClick={() => setAddItemText("")}>
-                                    <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
-                                </PopoverHandler>
-                                <PopoverContent className="group/card">
-                                    <div className="relative flex w-full max-w-[24rem]" >
+                                {isEditing ?
+                                    <div className="relative flex w-full max-w-[24rem]">
                                         <Input
-                                            label="Add a sub task"
-                                            value={addItemText}
-                                            onChange={({ target }) => setAddItemText(target.value)}
-                                            className="pr-20"
-                                            containerProps={{
-                                                className: "min-w-0",
+                                            type="text"
+                                            value={editingText}
+                                            onChange={(e) => { setEditingText(e.target.value) }}
+                                            placeholder={cardData.name}
+                                            className="!border-none"
+                                            labelProps={{
+                                                className: "hidden"
                                             }}
                                         />
-                                        <Button
-                                            size="sm"
-                                            color={addItemText ? "blue" : "blue-gray"}
-                                            disabled={!addItemText}
-                                            className="!absolute right-1 top-1 rounded"
-                                            onClick={handleAdd}
-                                        >
-                                            +
-                                        </Button>
+                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                            <CheckIcon className="h-5 w-5" />
+                                        </IconButton>
+                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                            <XMarkIcon className="h-5 w-5" />
+                                        </IconButton>
                                     </div>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </CardBody>
-                </Card>)
+                                    :
+                                    <Typography variant="h6" color="white">
+                                        {cardData.name}
+                                    </Typography>
+                                }
+                                {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
+                                {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
+                                    <Menu
+                                        open={openMenu}
+                                        handler={setOpenMenu}
+                                        placement="bottom-end"
+                                        animate={{
+                                            mount: { y: 0 },
+                                            unmount: { y: 25 },
+                                        }}
+                                    >
+                                        <MenuHandler>
+                                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
+                                        </MenuHandler>
+                                        <MenuList>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
+                                                <XMarkIcon className="h-5 w-5" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Delete
+                                                </Typography>
+                                            </MenuItem>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
+                                                <PencilSquareIcon className="h-5 w-5" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Edit
+                                                </Typography>
+                                            </MenuItem>
+                                        </MenuList>
+                                    </Menu>
+                                </ListItemSuffix>}
+                            </CardHeader>
+                            <CardBody className="flex flex-col p-0 overflow-scroll">
+                                <List ripple={true}>
+                                    {cardData.subList.map((item, index) => {
+                                        return <CheckListItem
+                                            key={item.id}
+                                            index={index}
+                                            cardId={cardData.id}
+                                            subItem={item}
+                                            handleSubItemCheck={handleSubItemCheck}
+                                            handleDeleteTask={handleDeleteTask}
+                                            handleLine={handleLine}
+                                            handleItemNameChange={handleItemNameChange}
+                                        />
+                                    })}
+                                </List>
+                                {provided.placeholder}
+                                <div className="opacity-0 group-hover/card:opacity-100">
+                                    <Popover
+                                        placement="top-end"
+                                        animate={{
+                                            mount: { scale: 1, x: 0, y: 0 },
+                                            unmount: { scale: 0, x: 120, y: 35 },
+                                        }}
+                                    >
+                                        <PopoverHandler onClick={() => setAddItemText("")}>
+                                            <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
+                                        </PopoverHandler>
+                                        <PopoverContent className="group/card">
+                                            <div className="relative flex w-full max-w-[24rem]" >
+                                                <Input
+                                                    label="Add a sub task"
+                                                    value={addItemText}
+                                                    onChange={({ target }) => setAddItemText(target.value)}
+                                                    className="pr-20"
+                                                    containerProps={{
+                                                        className: "min-w-0",
+                                                    }}
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    color={addItemText ? "blue" : "blue-gray"}
+                                                    disabled={!addItemText}
+                                                    className="!absolute right-1 top-1 rounded"
+                                                    onClick={handleAdd}
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </div>)
             }}
         </Droppable>
+            : ""
     )
 }
 
-const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, handleLine, handleItemNameChange }) => {
+const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDeleteTask, handleLine, handleItemNameChange }) => {
     const [openMenu, setOpenMenu] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingText, setEditingText] = useState("")
@@ -535,96 +546,113 @@ const CheckListItem = ({ cardId, subItem, handleSubItemCheck, handleDeleteTask, 
         handleItemNameChange(cardId, subItem.id, editingText)
     }
 
-    // item?.line 只是为了兼容之前旧的数据，之后可以删掉？
     return (
-        <Draggable key={subItem.id} draggableId={subItem.id}>
-            <ListItem ripple={false} className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""}`}>
-                <label
-                    htmlFor="vertical-list-react"
-                    className={`px-3 py-2 flex items-center w-full cursor-pointer`}
-                >
-                    <ListItemPrefix className="mr-3">
-                        <Checkbox
-                            id={subItem.id}
-                            ripple={false}
-                            className="hover:before:opacity-0 p-0"
-                            checked={subItem.checked}
-                            onChange={handleCheck}
-                            containerProps={{
-                                className: "p-0"
-                            }}
-                        />
-                    </ListItemPrefix>
-                    {isEditing ?
-                        <div className="relative flex w-full max-w-[24rem]">
-                            <Input
-                                type="text"
-                                value={editingText}
-                                onChange={(e) => { setEditingText(e.target.value) }}
-                                placeholder={subItem.taskName}
-                                className="!p-0 !border-none"
-                                labelProps={{
-                                    className: "hidden"
-                                }}
-                            />
-                            <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
-                                <CheckIcon className="h-5 w-5" />
-                            </IconButton>
-                            <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
-                                <XMarkIcon className="h-5 w-5" />
-                            </IconButton>
-                        </div>
-                        :
-                        <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
-                    }
-                </label>
-                {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
-                    <Menu
-                        open={openMenu}
-                        handler={setOpenMenu}
-                        placement="bottom-end"
-                        animate={{
-                            mount: { y: 0 },
-                            unmount: { y: 25 },
-                        }}
+        <Draggable key={subItem.id} draggableId={subItem.id} index={index}>
+            {(provided, snapshot) => {
+                console.log(provided, snapshot);
+                return (
+                    <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={{ ...provided.draggableProps.style, position: "static !important" }}
+                    // style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important", transformOrigin: "top left" }}
+                    // style={{ ...provided.draggableProps.style, transformOrigin: "top left" }}
                     >
-                        <MenuHandler >
-                            <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
-                        </MenuHandler>
-                        <MenuList>
-                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
-                                <PencilSquareIcon className="h-5 w-5" />
-                                <Typography variant="small" className="font-normal">
-                                    Edit
-                                </Typography>
-                            </MenuItem>
-                            <MenuItem className="p-0">
-                                <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
-                                    <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
-                                        <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
-                                        <Typography variant="small" className="font-normal">
-                                            Copy
-                                        </Typography>
+
+                        <ListItem
+                            ripple={false}
+                            className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""} z-50`}
+                        >
+                            <label
+                                htmlFor="vertical-list-react"
+                                className={`px-3 py-2 flex items-center w-full cursor-pointer`}
+                            >
+                                <ListItemPrefix className="mr-3">
+                                    <Checkbox
+                                        id={subItem.id}
+                                        ripple={false}
+                                        className="hover:before:opacity-0 p-0"
+                                        checked={subItem.checked}
+                                        onChange={handleCheck}
+                                        containerProps={{
+                                            className: "p-0"
+                                        }}
+                                    />
+                                </ListItemPrefix>
+                                {isEditing ?
+                                    <div className="relative flex w-full max-w-[24rem]">
+                                        <Input
+                                            type="text"
+                                            value={editingText}
+                                            onChange={(e) => { setEditingText(e.target.value) }}
+                                            placeholder={subItem.taskName}
+                                            className="!p-0 !border-none"
+                                            labelProps={{
+                                                className: "hidden"
+                                            }}
+                                        />
+                                        <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                            <CheckIcon className="h-5 w-5" />
+                                        </IconButton>
+                                        <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                            <XMarkIcon className="h-5 w-5" />
+                                        </IconButton>
                                     </div>
-                                </CopyToClipboard>
-                            </MenuItem>
-                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
-                                <TrashIcon strokeWidth={2} className="h-4 w-4" />
-                                <Typography variant="small" className="font-normal">
-                                    Delete
-                                </Typography>
-                            </MenuItem>
-                            <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
-                                <MinusIcon strokeWidth={2} className="h-6 w-4" />
-                                <Typography variant="small" className="font-normal">
-                                    Mark Line
-                                </Typography>
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                </ListItemSuffix>}
-            </ListItem>
-        </Draggable>
+                                    :
+                                    <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
+                                }
+                            </label>
+                            {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
+                                <Menu
+                                    open={openMenu}
+                                    handler={setOpenMenu}
+                                    placement="bottom-end"
+                                    animate={{
+                                        mount: { y: 0 },
+                                        unmount: { y: 25 },
+                                    }}
+                                >
+                                    <MenuHandler >
+                                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
+                                    </MenuHandler>
+                                    <MenuList>
+                                        <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
+                                            <PencilSquareIcon className="h-5 w-5" />
+                                            <Typography variant="small" className="font-normal">
+                                                Edit
+                                            </Typography>
+                                        </MenuItem>
+                                        <MenuItem className="p-0">
+                                            <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
+                                                <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
+                                                    <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                                                    <Typography variant="small" className="font-normal">
+                                                        Copy
+                                                    </Typography>
+                                                </div>
+                                            </CopyToClipboard>
+                                        </MenuItem>
+                                        <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
+                                            <TrashIcon strokeWidth={2} className="h-4 w-4" />
+                                            <Typography variant="small" className="font-normal">
+                                                Delete
+                                            </Typography>
+                                        </MenuItem>
+                                        <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
+                                            <MinusIcon strokeWidth={2} className="h-6 w-4" />
+                                            <Typography variant="small" className="font-normal">
+                                                Mark Line
+                                            </Typography>
+                                        </MenuItem>
+                                    </MenuList>
+                                </Menu>
+                            </ListItemSuffix>}
+                        </ListItem>
+                    </div>
+                )
+            }}
+        </Draggable >
     )
 }
 
