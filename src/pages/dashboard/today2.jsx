@@ -213,8 +213,6 @@ export function Today2() {
 
     const onDragEnd = (result, columns, setColumns) => {
 
-        console.log(result);
-
         if (!result.destination) return;
         const { source, destination } = result;
         if (source.droppableId !== destination.droppableId) {
@@ -276,7 +274,6 @@ export function Today2() {
                         Your data has been saved.
                     </Typography>
                 </Alert>
-
                 <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
                     <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
                     <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
@@ -549,106 +546,107 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
     return (
         <Draggable key={subItem.id} draggableId={subItem.id} index={index}>
             {(provided, snapshot) => {
-                console.log(provided, snapshot);
+                // console.log(provided, snapshot);
                 return (
-                    <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{ ...provided.draggableProps.style, position: "static !important" }}
-                    // style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important", transformOrigin: "top left" }}
-                    // style={{ ...provided.draggableProps.style, transformOrigin: "top left" }}
-                    >
-
-                        <ListItem
-                            ripple={false}
-                            className={`p-0 group/item ${subItem?.line ? "line-through decoration-gray-600" : ""} z-50`}
+                    <div>
+                        <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            // style={{ ...provided.draggableProps.style, position: "static !important" }}
+                            style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important", transformOrigin: "top left" }}
+                        // style={{ ...provided.draggableProps.style, transformOrigin: "top left" }}
                         >
-                            <label
-                                htmlFor="vertical-list-react"
-                                className={`px-3 py-2 flex items-center w-full cursor-pointer`}
+                            <ListItem
+                                ripple={false}
+                                className={`p-0 group/item ${subItem.line ? "line-through decoration-gray-600" : ""} z-50`}
                             >
-                                <ListItemPrefix className="mr-3">
-                                    <Checkbox
-                                        id={subItem.id}
-                                        ripple={false}
-                                        className="hover:before:opacity-0 p-0"
-                                        checked={subItem.checked}
-                                        onChange={handleCheck}
-                                        containerProps={{
-                                            className: "p-0"
-                                        }}
-                                    />
-                                </ListItemPrefix>
-                                {isEditing ?
-                                    <div className="relative flex w-full max-w-[24rem]">
-                                        <Input
-                                            type="text"
-                                            value={editingText}
-                                            onChange={(e) => { setEditingText(e.target.value) }}
-                                            placeholder={subItem.taskName}
-                                            className="!p-0 !border-none"
-                                            labelProps={{
-                                                className: "hidden"
+                                <label
+                                    htmlFor="vertical-list-react"
+                                    className={`px-3 py-2 flex items-center w-full cursor-pointer`}
+                                >
+                                    <ListItemPrefix className="mr-3">
+                                        <Checkbox
+                                            id={subItem.id}
+                                            ripple={false}
+                                            className="hover:before:opacity-0 p-0"
+                                            checked={subItem.checked}
+                                            onChange={handleCheck}
+                                            containerProps={{
+                                                className: "p-0"
                                             }}
                                         />
-                                        <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
-                                            <CheckIcon className="h-5 w-5" />
-                                        </IconButton>
-                                        <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
-                                            <XMarkIcon className="h-5 w-5" />
-                                        </IconButton>
-                                    </div>
-                                    :
-                                    <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
-                                }
-                            </label>
-                            {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
-                                <Menu
-                                    open={openMenu}
-                                    handler={setOpenMenu}
-                                    placement="bottom-end"
-                                    animate={{
-                                        mount: { y: 0 },
-                                        unmount: { y: 25 },
-                                    }}
-                                >
-                                    <MenuHandler >
-                                        <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
-                                    </MenuHandler>
-                                    <MenuList>
-                                        <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
-                                            <PencilSquareIcon className="h-5 w-5" />
-                                            <Typography variant="small" className="font-normal">
-                                                Edit
-                                            </Typography>
-                                        </MenuItem>
-                                        <MenuItem className="p-0">
-                                            <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
-                                                <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
-                                                    <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
-                                                    <Typography variant="small" className="font-normal">
-                                                        Copy
-                                                    </Typography>
-                                                </div>
-                                            </CopyToClipboard>
-                                        </MenuItem>
-                                        <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
-                                            <TrashIcon strokeWidth={2} className="h-4 w-4" />
-                                            <Typography variant="small" className="font-normal">
-                                                Delete
-                                            </Typography>
-                                        </MenuItem>
-                                        <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
-                                            <MinusIcon strokeWidth={2} className="h-6 w-4" />
-                                            <Typography variant="small" className="font-normal">
-                                                Mark Line
-                                            </Typography>
-                                        </MenuItem>
-                                    </MenuList>
-                                </Menu>
-                            </ListItemSuffix>}
-                        </ListItem>
+                                    </ListItemPrefix>
+                                    {isEditing ?
+                                        <div className="relative flex w-full max-w-[24rem]">
+                                            <Input
+                                                type="text"
+                                                value={editingText}
+                                                onChange={(e) => { setEditingText(e.target.value) }}
+                                                placeholder={subItem.taskName}
+                                                className="!p-0 !border-none"
+                                                labelProps={{
+                                                    className: "hidden"
+                                                }}
+                                            />
+                                            <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                                <CheckIcon className="h-5 w-5" />
+                                            </IconButton>
+                                            <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                                <XMarkIcon className="h-5 w-5" />
+                                            </IconButton>
+                                        </div>
+                                        :
+                                        <Typography color="blue-gray" className="font-light">{subItem.taskName}</Typography>
+                                    }
+                                </label>
+                                {!isEditing && <ListItemSuffix className="h-full" {...triggers}>
+                                    <Menu
+                                        open={openMenu}
+                                        handler={setOpenMenu}
+                                        placement="bottom-end"
+                                        animate={{
+                                            mount: { y: 0 },
+                                            unmount: { y: 25 },
+                                        }}
+                                    >
+                                        <MenuHandler >
+                                            <EllipsisVerticalIcon className="h-5 w-5 mr-2 opacity-0 group-hover/item:opacity-100" />
+                                        </MenuHandler>
+                                        <MenuList>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(subItem.taskName) }}>
+                                                <PencilSquareIcon className="h-5 w-5" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Edit
+                                                </Typography>
+                                            </MenuItem>
+                                            <MenuItem className="p-0">
+                                                <CopyToClipboard text={subItem.taskName} onCopy={() => { }}>
+                                                    <div className="flex items-center gap-2 pb-2 pt-[9px] px-3 ">
+                                                        <DocumentDuplicateIcon strokeWidth={2} className="h-4 w-4" />
+                                                        <Typography variant="small" className="font-normal">
+                                                            Copy
+                                                        </Typography>
+                                                    </div>
+                                                </CopyToClipboard>
+                                            </MenuItem>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteTask(cardId, subItem.id)}>
+                                                <TrashIcon strokeWidth={2} className="h-4 w-4" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Delete
+                                                </Typography>
+                                            </MenuItem>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => handleLine(cardId, subItem.id)}>
+                                                <MinusIcon strokeWidth={2} className="h-6 w-4" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Mark Line
+                                                </Typography>
+                                            </MenuItem>
+                                        </MenuList>
+                                    </Menu>
+                                </ListItemSuffix>}
+                            </ListItem>
+                        </div>
                     </div>
                 )
             }}
