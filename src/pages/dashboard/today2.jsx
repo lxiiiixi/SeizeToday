@@ -17,17 +17,7 @@ import remarkGfm from 'remark-gfm'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import "./test.css"
 
-
 // icon：https://heroicons.com/
-
-const layout = [
-    { i: "1111", x: 0, y: 0, w: 2, h: 2 },
-    { i: "2222", x: 2, y: 0, w: 2, h: 2 },
-    { i: "3333", x: 4, y: 0, w: 2, h: 2 },
-    { i: "4444", x: 6, y: 0, w: 2, h: 2 },
-    { i: "5555", x: 0, y: 1, w: 2, h: 2 }
-];
-
 
 const summaryLayout = { i: "summary", x: 0, y: 0, w: 2, h: 2 }
 const defaultLayout = {
@@ -38,76 +28,88 @@ const defaultLayout = {
     xxs: [summaryLayout]
 }
 
-const data = [
-    { id: "1111", name: "name1", subList: [{ id: "11", taskName: "work1", checked: false, line: true }] },
-    { id: "2222", name: "name2", subList: [{ id: "22", taskName: "work1", checked: false, line: false }] },
-    { id: "3333", name: "name3", subList: [{ id: "33", taskName: "work1", checked: false, line: true }] },
-    { id: "4444", name: "name4", subList: [{ id: "44", taskName: "work1", checked: false, line: false }] },
-    { id: "5555", name: "name5", subList: [{ id: "55", taskName: "work1", checked: false, line: true }] },
-]
-
 
 export function Today2() {
     const [isDraggable, setIsDraggable] = useState(false);
     const [gridLayout, setGridLayout] = useState(JSON.parse(localStorage.getItem("gridLayout")) || defaultLayout);
     const [dataList, setDataList] = useState(JSON.parse(localStorage.getItem("dataList")) || {});
-    const [summaryText, setSummaryText] = useState(localStorage.getItem("summary") || "");
+    const [addItemType, setAddItemType] = useState("task") // text/task
     const [addItemText, setAddItemText] = useState("");
     const [open, setOpen] = useState(false);
     const [openDialog, setOpenDialog] = useState(false)
 
 
-    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout") && summaryText === localStorage.getItem("summary")
+    // console.log(dataList);
+    // console.log(gridLayout);
 
+
+
+    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout")
 
     const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
 
 
 
 
-    useEffect(() => {
-        const targetElement = document.getElementById('test');
+    // useEffect(() => {
+    //     const targetElements = document.querySelectorAll('div.text-card');
 
-        const handleClick = function () {
-            const textareaElement = targetElement.querySelector('textarea');
+    //     const handleClick = function (ele) {
+    //         const textareaElement = ele.querySelector('textarea');
+    //         textareaElement.focus();
+    //     };
 
-            textareaElement.focus();
-        };
-        targetElement.addEventListener('click', handleClick);
+    //     Array.from(targetElements).forEach(targetElement => {
+    //         targetElement.addEventListener('click', () => handleClick(targetElement));
+    //     })
 
-        return () => {
-            targetElement.removeEventListener('click', handleClick);
-        };
-    }, []);
+    //     return () => {
+    //         Array.from(targetElements).forEach(targetElement => {
+    //             targetElement.removeEventListener('click', () => handleClick(targetElement));
+    //         })
+    //     };
+    // }, []);
+
 
 
     const addCardItem = () => {
-        if (addItemText) {
-            const newId = uuidv4()
-            const newItem = {
+        if (!addItemText) return;
+        const newId = uuidv4()
+        const newLayout = { i: newId, x: 1000, y: 1000, w: 2, h: 2 } // 保证永远加到最右下角
+        let newItem;
+
+        if (addItemType === "task") {
+            newItem = {
                 id: newId,
                 name: addItemText,
+                type: "task",
                 subList: []
             }
-            const newLayout = { i: newId, x: 0, y: 0, w: 2, h: 2 }
-            setDataList(oldList => ({ ...oldList, [newId]: newItem }))
-            setGridLayout((oldLayout) => {
-                return {
-                    lg: [...oldLayout.lg, newLayout],
-                    md: [...oldLayout.md, newLayout],
-                    sm: [...oldLayout.sm, newLayout],
-                    xs: [...oldLayout.xs, newLayout],
-                    xxs: [...oldLayout.xxs, newLayout],
-                }
-            })
-            setAddItemText("")
+        } else if (addItemType === "text") {
+            newItem = {
+                id: newId,
+                name: addItemText,
+                type: "text",
+                text: ""
+            }
         }
+
+        setDataList(oldList => ({ ...oldList, [newId]: newItem }))
+        setGridLayout((oldLayout) => {
+            return {
+                lg: [...oldLayout.lg, newLayout],
+                md: [...oldLayout.md, newLayout],
+                sm: [...oldLayout.sm, newLayout],
+                xs: [...oldLayout.xs, newLayout],
+                xxs: [...oldLayout.xxs, newLayout],
+            }
+        })
+        setAddItemText("")
     }
 
     const handleSave = () => {
         localStorage.setItem("gridLayout", JSON.stringify(gridLayout))
         localStorage.setItem("dataList", JSON.stringify(dataList))
-        localStorage.setItem("summary", summaryText)
         setOpen(true)
     }
 
@@ -185,6 +187,18 @@ export function Today2() {
                 [id]: {
                     ...dataList[id],
                     name: name
+                }
+            })
+        })
+    }
+
+    const handleTextChange = (id, text) => {
+        setDataList((dataList) => {
+            return ({
+                ...dataList,
+                [id]: {
+                    ...dataList[id],
+                    text: text
                 }
             })
         })
@@ -279,13 +293,35 @@ export function Today2() {
                     <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
                     <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => setOpenDialog((cur) => !cur)} />
                     <div className="relative flex w-full max-w-[24rem] ml-5" >
+                        <Menu placement="bottom-start">
+                            <MenuHandler>
+                                <Button
+                                    ripple={false}
+                                    variant="text"
+                                    color="blue-gray"
+                                    className="flex h-10 items-center gap-2 rounded-r-none border border-r-0 border-blue-gray-200 bg-blue-gray-500/10 pl-3"
+                                >
+                                    {addItemType}
+                                </Button>
+                            </MenuHandler>
+                            <MenuList className="min-w-[80px]">
+                                <MenuItem onClick={() => setAddItemType("text")}>
+                                    <span>Text</span>
+                                </MenuItem>
+                                <MenuItem onClick={() => setAddItemType("task")}>
+                                    <span>Task</span>
+                                </MenuItem>
+                            </MenuList>
+                        </Menu>
                         <Input
-                            label="Add a card"
                             value={addItemText}
                             onChange={({ target }) => setAddItemText(target.value)}
-                            className="pr-20"
+                            className="rounded-l-none !border-t-blue-gray-200 focus:!border-t-blue-500 pr-20"
                             containerProps={{
                                 className: "min-w-0",
+                            }}
+                            labelProps={{
+                                className: "before:content-none after:content-none",
                             }}
                         />
                         <Button
@@ -303,13 +339,11 @@ export function Today2() {
                     layouts={gridLayout}
                     breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                     cols={{ lg: 8, md: 6, sm: 4, xs: 4, xxs: 2 }}
-                    // layout={gridLayout}
-                    // cols={8}
                     rowHeight={150}
                     onLayoutChange={handleLayoutChange}
                     isDraggable={isDraggable}
                 >
-                    {Object.entries(dataList).map(([dataKey, dataValue], index) => {
+                    {Object.entries(dataList).filter(([dataKey, dataValue]) => dataValue.type === "task").map(([dataKey, dataValue], index) => {
                         return (
                             // !transform-none fix the bug of draggable item offset from mouse cursor
                             // https://github.com/atlassian/react-beautiful-dnd/issues/1003#issuecomment-762746127
@@ -317,7 +351,7 @@ export function Today2() {
                                 className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`}
                                 key={dataKey}
                             >
-                                <DraggableCard
+                                <DraggableTaskCard
                                     key={dataKey}
                                     cardData={dataValue}
                                     handleDeleteCard={handleDeleteCard}
@@ -331,25 +365,27 @@ export function Today2() {
                             </div>
                         )
                     })}
-                    <div className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`} key="summary">
-                        <Card className="w-full h-full pt-2 pb-4">
-                            <CardHeader
-                                variant="gradient"
-                                color="red"
-                                className="grid h-10 place-items-center"
+                    {Object.entries(dataList).filter(([dataKey, dataValue]) => dataValue.type === "text").map(([dataKey, dataValue], index) => {
+                        return (
+                            <div
+                                className={`pt-4 p-1 ${isDraggable ? "cursor-move" : ""}`}
+                                key={dataKey}
                             >
-                                Summary
-                            </CardHeader>
-                            <CardBody className="p-2 pb-0 h-full" id='test'>
-                                <TextareaAutosize
-                                    minRows={4}
-                                    value={summaryText}
-                                    onChange={(e) => setSummaryText(e.target.value)}
-                                    className="w-full p-2 focus:border focus:outline-red-500 max-h-full font-light"
+                                <DraggableTextCard
+                                    key={dataKey}
+                                    cardData={dataValue}
+                                    handleDeleteCard={handleDeleteCard}
+                                    // handleSubItemAdd={handleSubItemAdd}
+                                    // handleSubItemCheck={handleSubItemCheck}
+                                    // handleLine={handleLine}
+                                    // handleItemNameChange={handleItemNameChange}
+                                    // handleDeleteTask={handleDeleteTask}
+                                    handleNamechange={handleNamechange}
+                                    handleTextChange={handleTextChange}
                                 />
-                            </CardBody>
-                        </Card>
-                    </div>
+                            </div>
+                        )
+                    })}
                 </ResponsiveGridLayout>
             </div>
         </DragDropContext>
@@ -359,7 +395,7 @@ export function Today2() {
 export default Today2
 
 
-const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine, handleNamechange, handleItemNameChange }) => {
+const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine, handleNamechange, handleItemNameChange }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editingText, setEditingText] = useState("")
     const [addItemText, setAddItemText] = useState("")
@@ -401,11 +437,11 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                     >
-                        <Card className="w-full h-full  pt-2 pb-4 group/card">
+                        <Card className="w-full h-full py-4 group/card relative">
                             <CardHeader
                                 variant="gradient"
                                 color="gray"
-                                className="grid h-10 place-items-center group/header"
+                                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
                             >
                                 {isEditing ?
                                     <div className="relative flex w-full max-w-[24rem]">
@@ -419,10 +455,10 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                                                 className: "hidden"
                                             }}
                                         />
-                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6" color='gray' onClick={handleChangeName}>
                                             <CheckIcon className="h-5 w-5" />
                                         </IconButton>
-                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color='gray' onClick={() => setIsEditing(false)}>
                                             <XMarkIcon className="h-5 w-5" />
                                         </IconButton>
                                     </div>
@@ -432,7 +468,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                                     </Typography>
                                 }
                                 {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
-                                {!isEditing && <ListItemSuffix className="fixed right-6 top-2 h-0" {...triggers}>
+                                {!isEditing && <ListItemSuffix className="fixed right-2 top-2.5 h-0" {...triggers}>
                                     <Menu
                                         open={openMenu}
                                         handler={setOpenMenu}
@@ -462,7 +498,7 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
                                     </Menu>
                                 </ListItemSuffix>}
                             </CardHeader>
-                            <CardBody className="flex flex-col p-0 overflow-scroll">
+                            <CardBody className="flex flex-col p-0 overflow-scroll max-h-full">
                                 <List ripple={true}>
                                     {cardData.subList.map((item, index) => {
                                         return <CheckListItem
@@ -522,6 +558,129 @@ const DraggableCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSub
     )
 }
 
+const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handleTextChange }) => {
+    const [isEditing, setIsEditing] = useState(false)
+    const [openMenu, setOpenMenu] = useState(false);
+    const [editingText, setEditingText] = useState("")
+
+    const [isContentEditable, setIsContentEditable] = useState(false)
+    const [text, setText] = useState(cardData.text)
+
+    const triggers = {
+        onMouseEnter: () => setOpenMenu(true),
+        onMouseLeave: () => setOpenMenu(false),
+    };
+
+    const handleChangeName = () => {
+        handleNamechange(cardData.id, editingText)
+        setEditingText("")
+        setIsEditing(false)
+    }
+
+    const handleContentChange = () => {
+        console.log(cardData.id, text);
+        handleTextChange(cardData.id, text)
+        setIsContentEditable(false)
+    }
+    return (
+        <Card className="w-full h-full pt-2 pb-4 group/card">
+            <CardHeader
+                variant="gradient"
+                color="red"
+                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
+            >
+                {isEditing ?
+                    <div className="relative flex w-full max-w-[24rem]">
+                        <Input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => { setEditingText(e.target.value) }}
+                            placeholder={cardData.name}
+                            className="!border-none"
+                            labelProps={{
+                                className: "hidden"
+                            }}
+                        />
+                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6 " color='gray' onClick={handleChangeName}>
+                            <CheckIcon className="h-5 w-5" />
+                        </IconButton>
+                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color='gray' onClick={() => setIsEditing(false)}>
+                            <XMarkIcon className="h-5 w-5" />
+                        </IconButton>
+                    </div>
+                    :
+                    <Typography variant="h6" color="white">
+                        {cardData.name}
+                    </Typography>
+                }
+                {!isEditing && <ListItemSuffix className="fixed right-2 top-2.5 h-0" {...triggers}>
+                    <Menu
+                        open={openMenu}
+                        handler={setOpenMenu}
+                        placement="bottom-end"
+                        animate={{
+                            mount: { y: 0 },
+                            unmount: { y: 25 },
+                        }}
+                    >
+                        <MenuHandler>
+                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
+                        </MenuHandler>
+                        <MenuList>
+                            <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
+                                <XMarkIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Delete
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsEditing(true); setEditingText(cardData.name) }}>
+                                <PencilSquareIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Edit
+                                </Typography>
+                            </MenuItem>
+                        </MenuList>
+                    </Menu>
+                </ListItemSuffix>}
+            </CardHeader>
+            <CardBody className="p-2 pt-4 pb-0 h-full text-card overflow-scroll">
+                {
+                    isContentEditable ?
+                        <div>
+                            <TextareaAutosize
+                                minRows={8}
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                className="w-full p-1 focous:border-none focus:outline-none max-h-full font-light"
+                            />
+                            <div className="absolute right-2 bottom-2 flex gap-2 items-center">
+                                <IconButton variant="text" className="w-6 h-6 rounded-lg" color='gray' onClick={() => { setIsContentEditable(false) }} >
+                                    <XMarkIcon className="h-5 w-5" />
+                                </IconButton>
+                                <IconButton className="rounded-lg w-6 h-6" color='gray' onClick={handleContentChange} >
+                                    <CheckIcon className="h-5 w-5" />
+                                </IconButton>
+                            </div>
+                        </div>
+                        :
+                        <div className="px-2 font-light">
+                            {cardData.text}
+                            <IconButton
+                                className="rounded-full !absolute right-2 bottom-2 opacity-0 group-hover/card:opacity-100"
+                                size="sm"
+                                color="gray"
+                                onClick={() => { setIsContentEditable(true) }}
+                            >
+                                <PencilSquareIcon className="h-4 w-4" />
+                            </IconButton>
+                        </div>
+                }
+
+            </CardBody>
+        </Card>
+    )
+}
+
 const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDeleteTask, handleLine, handleItemNameChange }) => {
     const [openMenu, setOpenMenu] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -555,7 +714,6 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
                             {...provided.dragHandleProps}
                             // style={{ ...provided.draggableProps.style, position: "static !important" }}
                             style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important", transformOrigin: "top left" }}
-                        // style={{ ...provided.draggableProps.style, transformOrigin: "top left" }}
                         >
                             <ListItem
                                 ripple={false}
@@ -589,10 +747,10 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
                                                     className: "hidden"
                                                 }}
                                             />
-                                            <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6  bg-gray-700" onClick={handleChangeName}>
+                                            <IconButton className="!absolute right-0 top-2 rounded-lg w-6 h-6" color='gray' onClick={handleChangeName}>
                                                 <CheckIcon className="h-5 w-5" />
                                             </IconButton>
-                                            <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg text-gray-700" onClick={() => setIsEditing(false)}>
+                                            <IconButton variant="text" className="!absolute right-7 w-6 h-6 top-2 rounded-lg" color='gray' onClick={() => setIsEditing(false)}>
                                                 <XMarkIcon className="h-5 w-5" />
                                             </IconButton>
                                         </div>
