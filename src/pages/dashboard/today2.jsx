@@ -809,13 +809,13 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
             {(provided, snapshot) => {
                 // console.log(provided, snapshot);
                 return (
-                    <div>
+                    <div className=" relative z-50">
                         <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             // style={{ ...provided.draggableProps.style, position: "static !important" }}
-                            style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important", transformOrigin: "top left" }}
+                            style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important" }}
                         >
                             <ListItem
                                 ripple={false}
@@ -925,7 +925,7 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
         let markdown = ``;
         if (ifGroup) {
             Object.entries(data).forEach(([key, element]) => {
-                if (element.subList.length !== 0) {
+                if (element.type === "task" && element.subList?.length !== 0) {
                     markdown += `## ${element.name} \n
         `
                     element.subList.forEach(subItem => {
@@ -941,7 +941,7 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
             });
         } else {
             Object.entries(data).forEach(([key, element]) => {
-                if (element.subList.length !== 0) {
+                if (element.type === "task" && element.subList?.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
                             if (subItem.checked) markdown += `- ${element.name}:${subItem.taskName} \n
@@ -959,11 +959,11 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
     }
 
     const generateText = (data, ifDisplayFinished, ifGroup) => {
-        console.log(data, ifDisplayFinished, ifGroup);
         let text = "";
         if (ifGroup) {
             Object.entries(data).forEach(([key, element]) => {
-                if (element.subList.length !== 0) {
+                console.log(element.type);
+                if (element.type === "task" && element.subList?.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
                             if (subItem.checked) text += "✅" + subItem.taskName + "\n"
@@ -979,7 +979,7 @@ const DownLoadDialog = ({ dataList, openDialog, handleDialog }) => {
             })
         } else {
             Object.entries(data).forEach(([key, element]) => {
-                if (element.subList.length !== 0) {
+                if (element.type === "task" && element.subList?.length !== 0) {
                     element.subList.forEach(subItem => {
                         if (ifDisplayFinished) {
                             if (subItem.checked) text += "✅" + element.name + ":" + subItem.taskName + "\n"
