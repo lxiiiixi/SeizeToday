@@ -492,7 +492,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                             <CardHeader
                                 variant="gradient"
                                 className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
-                                style={{ backgroundColor: cardData.headColor || "#8d8d8d", boxShadow: cardData.headColor || "#8d8d8d" }}
+                                style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
                             >
                                 {isEditing ?
                                     <div className="relative flex w-full max-w-[24rem]">
@@ -682,7 +682,7 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
             <CardHeader
                 variant="gradient"
                 className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
-                style={{ backgroundColor: cardData.headColor || "#8d8d8d", boxShadow: cardData.headColor || "#8d8d8d" }}
+                style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
             >
                 {isEditing ?
                     <div className="relative flex w-full max-w-[24rem]">
