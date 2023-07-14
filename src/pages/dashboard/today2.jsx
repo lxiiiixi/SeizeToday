@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import {
-    Card, CardFooter, CardBody, CardHeader,
+    Card, CardBody, CardHeader,
     Typography, List, ListItem, ListItemSuffix,
     Checkbox, IconButton, Switch, Input, Button,
     Alert, Popover, PopoverHandler, PopoverContent,
@@ -8,13 +8,14 @@ import {
     Dialog, DialogHeader, DialogBody, DialogFooter
 } from '@material-tailwind/react'
 import { v4 as uuidv4 } from 'uuid'
-import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon, CheckIcon, PencilSquareIcon } from "@heroicons/react/24/solid";
+import { TrashIcon, CheckCircleIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, MinusIcon, DocumentDuplicateIcon, CheckIcon, PencilSquareIcon, SparklesIcon } from "@heroicons/react/24/solid";
 import TextareaAutosize from 'react-textarea-autosize';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { ChromePicker } from 'react-color';
 import "./test.css"
 
 // icon：https://heroicons.com/
@@ -83,6 +84,7 @@ export function Today2() {
                 id: newId,
                 name: addItemText,
                 type: "task",
+                headColor: "#8d8d8d",
                 subList: []
             }
         } else if (addItemType === "text") {
@@ -90,6 +92,7 @@ export function Today2() {
                 id: newId,
                 name: addItemText,
                 type: "text",
+                headColor: "#8d8d8d",
                 text: ""
             }
         }
@@ -163,6 +166,18 @@ export function Today2() {
                         }
                         return subItem
                     })
+                }
+            })
+        })
+    }
+
+    const handleHeaderColor = (cardId, color) => {
+        setDataList((dataList) => {
+            return ({
+                ...dataList,
+                [cardId]: {
+                    ...dataList[cardId],
+                    headColor: color
                 }
             })
         })
@@ -361,6 +376,7 @@ export function Today2() {
                                     handleLine={handleLine}
                                     handleNamechange={handleNamechange}
                                     handleItemNameChange={handleItemNameChange}
+                                    handleHeaderColor={handleHeaderColor}
                                 />
                             </div>
                         )
@@ -382,6 +398,7 @@ export function Today2() {
                                     // handleDeleteTask={handleDeleteTask}
                                     handleNamechange={handleNamechange}
                                     handleTextChange={handleTextChange}
+                                    handleHeaderColor={handleHeaderColor}
                                 />
                             </div>
                         )
@@ -395,12 +412,14 @@ export function Today2() {
 export default Today2
 
 
-const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine, handleNamechange, handleItemNameChange }) => {
+const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handleSubItemCheck, handleDeleteTask, handleLine, handleNamechange, handleItemNameChange, handleHeaderColor }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editingText, setEditingText] = useState("")
     const [addItemText, setAddItemText] = useState("")
     const [openMenu, setOpenMenu] = useState(false);
     const [isMounted, setIsMounted] = useState(false); // fix the dnd bug
+    const [headerColor, setHeaderColor] = useState(cardData.headColor)
+    const [isColorPickerDisplay, setIsColorPickerDisplay] = useState(false)
 
     useEffect(() => {
         setIsMounted(true);
@@ -424,6 +443,31 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
         setIsEditing(false)
     }
 
+    const handleColorChange = (color) => {
+        setHeaderColor(color.hex)
+    }
+
+    const handleComfirm = () => {
+        handleHeaderColor(cardData.id, headerColor)
+        setIsColorPickerDisplay(false)
+    }
+
+    const isDarkColor = (hexColor) => {
+        const hex = hexColor.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => '#' + r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        const rgbColor = result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+        if (!rgbColor) return false;
+        const brightness = (rgbColor.r * 299 + rgbColor.g * 587 + rgbColor.b * 114) / 1000;
+        return brightness < 128;
+    }
+
+    const isDark = useMemo(() => isDarkColor(headerColor), [headerColor])
+
+
     return (
         isMounted ? <Droppable
             key={cardData.id}
@@ -438,15 +482,23 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                         {...provided.droppableProps}
                     >
                         <Card className="w-full h-full py-4 group/card relative">
+                            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-50 p-4 bg-white/80 rounded-xl shadow-lg`}>
+                                <ChromePicker onChange={handleColorChange} color={headerColor} />
+                                <div className='flex justify-evenly mt-4'>
+                                    <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
+                                    <Button color='gray' variant="filled" size='sm' onClick={handleComfirm}>Confirm</Button>
+                                </div>
+                            </div>}
                             <CardHeader
                                 variant="gradient"
-                                color="gray"
                                 className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
+                                style={{ backgroundColor: cardData.headColor || "#8d8d8d", boxShadow: cardData.headColor || "#8d8d8d" }}
                             >
                                 {isEditing ?
                                     <div className="relative flex w-full max-w-[24rem]">
                                         <Input
                                             type="text"
+                                            color={isDark ? "white" : "gray"}
                                             value={editingText}
                                             onChange={(e) => { setEditingText(e.target.value) }}
                                             placeholder={cardData.name}
@@ -455,15 +507,15 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                                 className: "hidden"
                                             }}
                                         />
-                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6" color='gray' onClick={handleChangeName}>
+                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6" color={isDark ? "white" : "gray"} onClick={handleChangeName}>
                                             <CheckIcon className="h-5 w-5" />
                                         </IconButton>
-                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color='gray' onClick={() => setIsEditing(false)}>
+                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
                                             <XMarkIcon className="h-5 w-5" />
                                         </IconButton>
                                     </div>
                                     :
-                                    <Typography variant="h6" color="white">
+                                    <Typography variant="h6" color={isDark ? "white" : "gray"}>
                                         {cardData.name}
                                     </Typography>
                                 }
@@ -479,7 +531,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                         }}
                                     >
                                         <MenuHandler>
-                                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
+                                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100 " color={isDark ? "white" : "gray"} />
                                         </MenuHandler>
                                         <MenuList>
                                             <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
@@ -492,6 +544,12 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                                 <PencilSquareIcon className="h-5 w-5" />
                                                 <Typography variant="small" className="font-normal">
                                                     Edit
+                                                </Typography>
+                                            </MenuItem>
+                                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsColorPickerDisplay(true) }}>
+                                                <SparklesIcon className="h-5 w-5" />
+                                                <Typography variant="small" className="font-normal">
+                                                    Color Picker
                                                 </Typography>
                                             </MenuItem>
                                         </MenuList>
@@ -558,10 +616,12 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
     )
 }
 
-const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handleTextChange }) => {
+const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handleTextChange, handleHeaderColor }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [openMenu, setOpenMenu] = useState(false);
     const [editingText, setEditingText] = useState("")
+    const [headerColor, setHeaderColor] = useState(cardData.headColor)
+    const [isColorPickerDisplay, setIsColorPickerDisplay] = useState(false)
 
     const [isContentEditable, setIsContentEditable] = useState(false)
     const [text, setText] = useState(cardData.text)
@@ -578,21 +638,57 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
     }
 
     const handleContentChange = () => {
-        console.log(cardData.id, text);
         handleTextChange(cardData.id, text)
         setIsContentEditable(false)
     }
+
+
+    const handleColorChange = (color) => {
+        setHeaderColor(color.hex)
+    }
+
+    const handleComfirm = () => {
+        handleHeaderColor(cardData.id, headerColor)
+        setIsColorPickerDisplay(false)
+    }
+
+    const isDarkColor = (hexColor) => {
+        if (!hexColor) return false
+        const hex = hexColor.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => '#' + r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        const rgbColor = result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+        if (!rgbColor) return false;
+        const brightness = (rgbColor.r * 299 + rgbColor.g * 587 + rgbColor.b * 114) / 1000;
+        return brightness < 128;
+    }
+
+    const isDark = useMemo(() => isDarkColor(headerColor), [headerColor])
+
+
+
     return (
         <Card className="w-full h-full pt-2 pb-4 group/card">
+            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-50 p-4 bg-white/80 rounded-xl shadow-lg`}>
+                <ChromePicker onChange={handleColorChange} color={headerColor} />
+                <div className='flex justify-evenly mt-4'>
+                    <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
+                    <Button color='gray' variant="filled" size='sm' onClick={handleComfirm}>Confirm</Button>
+                </div>
+            </div>}
             <CardHeader
                 variant="gradient"
-                color="red"
                 className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
+                style={{ backgroundColor: cardData.headColor || "#8d8d8d", boxShadow: cardData.headColor || "#8d8d8d" }}
             >
                 {isEditing ?
                     <div className="relative flex w-full max-w-[24rem]">
                         <Input
                             type="text"
+                            color={isDark ? "white" : "gray"}
                             value={editingText}
                             onChange={(e) => { setEditingText(e.target.value) }}
                             placeholder={cardData.name}
@@ -601,15 +697,15 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
                                 className: "hidden"
                             }}
                         />
-                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6 " color='gray' onClick={handleChangeName}>
+                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6 " color={isDark ? "white" : "gray"} onClick={handleChangeName}>
                             <CheckIcon className="h-5 w-5" />
                         </IconButton>
-                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color='gray' onClick={() => setIsEditing(false)}>
+                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
                             <XMarkIcon className="h-5 w-5" />
                         </IconButton>
                     </div>
                     :
-                    <Typography variant="h6" color="white">
+                    <Typography variant="h6" color={isDark ? "white" : "gray"}>
                         {cardData.name}
                     </Typography>
                 }
@@ -624,7 +720,7 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
                         }}
                     >
                         <MenuHandler>
-                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" />
+                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" color={isDark ? "white" : "gray"} />
                         </MenuHandler>
                         <MenuList>
                             <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
@@ -637,6 +733,12 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
                                 <PencilSquareIcon className="h-5 w-5" />
                                 <Typography variant="small" className="font-normal">
                                     Edit
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem className="flex items-center gap-2" onClick={() => { setIsColorPickerDisplay(true) }}>
+                                <SparklesIcon className="h-5 w-5" />
+                                <Typography variant="small" className="font-normal">
+                                    Color Picker
                                 </Typography>
                             </MenuItem>
                         </MenuList>
