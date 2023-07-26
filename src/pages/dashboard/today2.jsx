@@ -43,35 +43,8 @@ export function Today2() {
     // console.log(dataList);
     // console.log(gridLayout);
 
-
-
-    const whetherNeedSave = JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout")
-
+    const whetherNeedSave = useMemo(() => JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout"), [dataList, gridLayout]);
     const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
-
-
-
-
-    // useEffect(() => {
-    //     const targetElements = document.querySelectorAll('div.text-card');
-
-    //     const handleClick = function (ele) {
-    //         const textareaElement = ele.querySelector('textarea');
-    //         textareaElement.focus();
-    //     };
-
-    //     Array.from(targetElements).forEach(targetElement => {
-    //         targetElement.addEventListener('click', () => handleClick(targetElement));
-    //     })
-
-    //     return () => {
-    //         Array.from(targetElements).forEach(targetElement => {
-    //             targetElement.removeEventListener('click', () => handleClick(targetElement));
-    //         })
-    //     };
-    // }, []);
-
-
 
     const addCardItem = () => {
         if (!addItemText) return;
@@ -114,6 +87,9 @@ export function Today2() {
         localStorage.setItem("gridLayout", JSON.stringify(gridLayout))
         localStorage.setItem("dataList", JSON.stringify(dataList))
         setOpen(true)
+        setTimeout(() => {
+            setOpen(false)
+        }, 2000)
     }
 
     const handleDeleteCard = (id) => {
@@ -278,6 +254,7 @@ export function Today2() {
     };
 
 
+
     // https://github.com/react-grid-layout/react-grid-layout#responsive-grid-layout-props
     return (
         <DragDropContext
@@ -306,7 +283,7 @@ export function Today2() {
                 <div className="m-4 mt-0 flex justify-between bg-white rounded-lg p-2">
                     <Button className="mr-4" onClick={handleSave} disabled={whetherNeedSave}>Save</Button>
                     <Switch id="Draggable" label="Draggable" ripple={true} checked={isDraggable} onChange={(e) => setIsDraggable(e.target.checked)} />
-                    <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => setOpenDialog((cur) => !cur)} />
+                    <DownLoadDialog dataList={dataList} openDialog={openDialog} handleDialog={() => { setOpenDialog((cur) => !cur) }} />
                     <div className="relative flex w-full max-w-[24rem] ml-5" >
                         <Menu placement="bottom-start">
                             <MenuHandler>
@@ -391,11 +368,6 @@ export function Today2() {
                                     key={dataKey}
                                     cardData={dataValue}
                                     handleDeleteCard={handleDeleteCard}
-                                    // handleSubItemAdd={handleSubItemAdd}
-                                    // handleSubItemCheck={handleSubItemCheck}
-                                    // handleLine={handleLine}
-                                    // handleItemNameChange={handleItemNameChange}
-                                    // handleDeleteTask={handleDeleteTask}
                                     handleNamechange={handleNamechange}
                                     handleTextChange={handleTextChange}
                                     handleHeaderColor={handleHeaderColor}
@@ -482,7 +454,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                         {...provided.droppableProps}
                     >
                         <Card className="w-full h-full py-4 group/card relative">
-                            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-50 p-4 bg-white/80 rounded-xl shadow-lg`}>
+                            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
                                 <ChromePicker onChange={handleColorChange} color={headerColor} />
                                 <div className='flex justify-evenly mt-4'>
                                     <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
@@ -491,7 +463,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                             </div>}
                             <CardHeader
                                 variant="gradient"
-                                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
+                                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
                                 style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
                             >
                                 {isEditing ?
@@ -671,8 +643,8 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
 
 
     return (
-        <Card className="w-full h-full pt-2 pb-4 group/card">
-            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-50 p-4 bg-white/80 rounded-xl shadow-lg`}>
+        <Card className={`w-full h-full pt-2 pb-4 group/card`}>
+            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 !z-[1000] p-4 bg-white/80 rounded-xl shadow-lg h-full`}>
                 <ChromePicker onChange={handleColorChange} color={headerColor} />
                 <div className='flex justify-evenly mt-4'>
                     <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
@@ -681,7 +653,7 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
             </div>}
             <CardHeader
                 variant="gradient"
-                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-0 left-1/2 -translate-x-1/2"
+                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
                 style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
             >
                 {isEditing ?
@@ -807,19 +779,20 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
     return (
         <Draggable key={subItem.id} draggableId={subItem.id} index={index}>
             {(provided, snapshot) => {
-                // console.log(provided, snapshot);
+                // console.log(snapshot.isDragging);
+
                 return (
-                    <div className=" relative z-50">
+                    <div className="relative">
                         <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            // style={{ ...provided.draggableProps.style, position: "static !important" }}
                             style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important" }}
+                        // style={{ ...provided.draggableProps.style, position: "static !important" }}
                         >
                             <ListItem
                                 ripple={false}
-                                className={`p-0 group/item ${subItem.line ? "line-through decoration-gray-600" : ""} z-50`}
+                                className={`p-0 group/item ${subItem.line ? "line-through decoration-gray-600" : ""}`}
                             >
                                 <label
                                     htmlFor="vertical-list-react"
