@@ -43,7 +43,7 @@ export function Today2() {
     // console.log(dataList);
     // console.log(gridLayout);
 
-    const whetherNeedSave = useMemo(() => JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout"), [dataList, gridLayout]);
+    const whetherNeedSave = useMemo(() => JSON.stringify(dataList) === localStorage.getItem("dataList") && JSON.stringify(gridLayout) === localStorage.getItem("gridLayout"), [dataList, gridLayout, open]);
     const ResponsiveGridLayout = useMemo(() => WidthProvider(Responsive), []); // const ResponsiveGridLayout = WidthProvider(Responsive); // 如果不使用 useMemo 只能放到函数外面
 
     const addCardItem = () => {
@@ -334,6 +334,7 @@ export function Today2() {
                     rowHeight={150}
                     onLayoutChange={handleLayoutChange}
                     isDraggable={isDraggable}
+                    useCSSTransforms={false}
                 >
                     {Object.entries(dataList).filter(([dataKey, dataValue]) => dataValue.type === "task").map(([dataKey, dataValue], index) => {
                         return (
@@ -453,7 +454,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                     >
-                        <Card className="w-full h-full py-4 group/card relative">
+                        <Card className="w-full h-full pb-4 pt-5 group/card relative">
                             {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
                                 <ChromePicker onChange={handleColorChange} color={headerColor} />
                                 <div className='flex justify-evenly mt-4'>
@@ -643,8 +644,8 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
 
 
     return (
-        <Card className={`w-full h-full pt-2 pb-4 group/card`}>
-            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 !z-[1000] p-4 bg-white/80 rounded-xl shadow-lg h-full`}>
+        <Card className={`w-full h-full py-4 group/card`}>
+            {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 !z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
                 <ChromePicker onChange={handleColorChange} color={headerColor} />
                 <div className='flex justify-evenly mt-4'>
                     <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
@@ -787,7 +788,7 @@ const CheckListItem = ({ cardId, index, subItem, handleSubItemCheck, handleDelet
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important" }}
+                        // style={{ ...provided.draggableProps.style, top: "0px !important", left: "0px !important" }}
                         // style={{ ...provided.draggableProps.style, position: "static !important" }}
                         >
                             <ListItem
