@@ -457,7 +457,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                     >
-                        <Card className="w-full h-full py-4 group/card relative">
+                        <Card className="w-full h-full py-4 group/card">
                             {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
                                 <SketchPicker onChange={handleColorChange} color={headerColor} presetColors={presetColors} />
                                 <div className='flex justify-evenly mt-4'>
@@ -470,7 +470,6 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                 className="grid h-8 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
                                 style={{ backgroundColor: cardData.headColor, boxShadow: `0px 2px 3px 1px ${cardData.headColor}` }}
                             >
-                                {/* 1. 把这里的input高度改小 2. 把下面内容的 padding top 改小 */}
                                 {isEditing ?
                                     <div className="relative flex w-full max-w-[24rem] h-full parent">
                                         <Input
@@ -558,7 +557,14 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                         }}
                                     >
                                         <PopoverHandler onClick={() => setAddItemText("")}>
-                                            <PlusIcon className="h-5 w-5 fixed right-4 bottom-4 cursor-pointer" />
+                                            <IconButton
+                                                className="rounded-full !absolute right-2 bottom-2 opacity-0 group-hover/card:opacity-100"
+                                                size="sm"
+                                                color="gray"
+                                                onClick={() => { setIsContentEditable(true) }}
+                                            >
+                                                <PlusIcon className="h-5 w-5 " />
+                                            </IconButton>
                                         </PopoverHandler>
                                         <PopoverContent className="group/card">
                                             <div className="relative flex w-full max-w-[24rem]" >
