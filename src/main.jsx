@@ -9,11 +9,21 @@ import "./index.css";
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
+const customTheme = {
+  styles: {
+    base: {
+      input: {
+        // height: "h-full"
+      }
+    }
+  }
+}
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
+      <ThemeProvider value={customTheme}>
         <MaterialTailwindControllerProvider>
           <App />
         </MaterialTailwindControllerProvider>

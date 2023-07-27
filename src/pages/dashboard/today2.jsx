@@ -15,8 +15,11 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ChromePicker } from 'react-color';
+import { SketchPicker } from 'react-color';
 import "./test.css"
+
+
+const presetColors = ["#7895CB", "#C5DFF8", "#FFD6A5", "#FFF9C9", "#F4E0B9", "#FFEECC", "#F1AE89", "#1A936F", "#88D498", "#F9B384", "#FCF5EE", "#4E944F", "#E9EFC0", "#FFCDCD", "#FFF0F5", "#8d8d8d"]
 
 // icon：https://heroicons.com/
 
@@ -454,9 +457,9 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                     >
-                        <Card className="w-full h-full pb-4 pt-5 group/card relative">
+                        <Card className="w-full h-full py-4 group/card relative">
                             {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
-                                <ChromePicker onChange={handleColorChange} color={headerColor} />
+                                <SketchPicker onChange={handleColorChange} color={headerColor} presetColors={presetColors} />
                                 <div className='flex justify-evenly mt-4'>
                                     <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
                                     <Button color='gray' variant="filled" size='sm' onClick={handleComfirm}>Confirm</Button>
@@ -464,26 +467,27 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                             </div>}
                             <CardHeader
                                 variant="gradient"
-                                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
-                                style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
+                                className="grid h-8 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
+                                style={{ backgroundColor: cardData.headColor, boxShadow: `0px 2px 3px 1px ${cardData.headColor}` }}
                             >
+                                {/* 1. 把这里的input高度改小 2. 把下面内容的 padding top 改小 */}
                                 {isEditing ?
-                                    <div className="relative flex w-full max-w-[24rem]">
+                                    <div className="relative flex w-full max-w-[24rem] h-full parent">
                                         <Input
                                             type="text"
                                             color={isDark ? "white" : "gray"}
                                             value={editingText}
                                             onChange={(e) => { setEditingText(e.target.value) }}
                                             placeholder={cardData.name}
-                                            className="!border-none"
+                                            className="!border-none !py-0"
                                             labelProps={{
                                                 className: "hidden"
                                             }}
                                         />
-                                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6" color={isDark ? "white" : "gray"} onClick={handleChangeName}>
+                                        <IconButton className="!absolute right-3 top-1 rounded-lg w-6 h-6" color={isDark ? "white" : "gray"} onClick={handleChangeName}>
                                             <CheckIcon className="h-5 w-5" />
                                         </IconButton>
-                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
+                                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-1 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
                                             <XMarkIcon className="h-5 w-5" />
                                         </IconButton>
                                     </div>
@@ -493,7 +497,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                     </Typography>
                                 }
                                 {/* <XMarkIcon onClick={() => handleDeleteCard(cardData.id)} className="h-5 w-5 fixed right-7 top-2 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
-                                {!isEditing && <ListItemSuffix className="fixed right-2 top-2.5 h-0" {...triggers}>
+                                {!isEditing && <ListItemSuffix className="fixed right-2 top-2 h-0" {...triggers}>
                                     <Menu
                                         open={openMenu}
                                         handler={setOpenMenu}
@@ -504,7 +508,7 @@ const DraggableTaskCard = ({ cardData, handleDeleteCard, handleSubItemAdd, handl
                                         }}
                                     >
                                         <MenuHandler>
-                                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100 " color={isDark ? "white" : "gray"} />
+                                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer opacity-0 group-hover/header:opacity-100" color={isDark ? "white" : "gray"} />
                                         </MenuHandler>
                                         <MenuList>
                                             <MenuItem className="flex items-center gap-2" onClick={() => handleDeleteCard(cardData.id)}>
@@ -644,9 +648,9 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
 
 
     return (
-        <Card className={`w-full h-full py-4 group/card`}>
+        <Card className={`w-full h-full py-3 group/card`}>
             {isColorPickerDisplay && <div className={`absolute right-1/2 top-2 translate-x-1/2 !z-[1000] p-4 bg-white/80 rounded-xl shadow-lg`}>
-                <ChromePicker onChange={handleColorChange} color={headerColor} />
+                <SketchPicker onChange={handleColorChange} color={headerColor} presetColors={presetColors} />
                 <div className='flex justify-evenly mt-4'>
                     <Button color='gray' variant="outlined" size='sm' onClick={() => setIsColorPickerDisplay(false)}>Cancel</Button>
                     <Button color='gray' variant="filled" size='sm' onClick={handleComfirm}>Confirm</Button>
@@ -654,11 +658,11 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
             </div>}
             <CardHeader
                 variant="gradient"
-                className="grid h-10 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
-                style={{ backgroundColor: cardData.headColor, boxShadow: cardData.headColor }}
+                className="grid h-8 place-items-center group/header absolute w-11/12 mx-0 top-1.5 left-1/2 -translate-x-1/2"
+                style={{ backgroundColor: cardData.headColor, boxShadow: `0px 4px 4px 1px ${cardData.headColor}` }}
             >
                 {isEditing ?
-                    <div className="relative flex w-full max-w-[24rem]">
+                    <div className="relative flex w-full max-w-[24rem] parent">
                         <Input
                             type="text"
                             color={isDark ? "white" : "gray"}
@@ -670,10 +674,10 @@ const DraggableTextCard = ({ cardData, handleDeleteCard, handleNamechange, handl
                                 className: "hidden"
                             }}
                         />
-                        <IconButton className="!absolute right-3 top-2 rounded-lg w-6 h-6 " color={isDark ? "white" : "gray"} onClick={handleChangeName}>
+                        <IconButton className="!absolute right-3 top-1 rounded-lg w-6 h-6 " color={isDark ? "white" : "gray"} onClick={handleChangeName}>
                             <CheckIcon className="h-5 w-5" />
                         </IconButton>
-                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-2 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
+                        <IconButton variant="text" className="!absolute right-10 w-6 h-6 top-1 rounded-lg" color={isDark ? "white" : "gray"} onClick={() => setIsEditing(false)}>
                             <XMarkIcon className="h-5 w-5" />
                         </IconButton>
                     </div>
