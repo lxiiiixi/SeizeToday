@@ -1,4 +1,7 @@
-import create from "zustand";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+// reference： https://github.com/bryanjenningz/react-duolingo/blob/master/src/hooks/useBoundStore.ts
 
 interface UserInfo {
     userName: string;
@@ -7,22 +10,30 @@ interface UserInfo {
     setUserAddress: (address: string) => void;
 }
 
-const userInfoStore = create<UserInfo>((set) => ({
-    userName:"none",
-    setUserName: (name) => {
-        set((state) => ({
-            ...state,
-            userName:name
-          }));
-    },
 
-    userAddress: "none",
-    setUserAddress: (address) => {
-        set((state) => ({
-            ...state,
-            userAddress:address
-          }));
-    }
-}))
+const userInfoStore = create<UserInfo>()(
+    persist(
+        set => ({
+            userName: 'none',
+            setUserName: name => {
+                set(state => ({
+                    ...state,
+                    userName: name
+                }));
+            },
 
-export default userInfoStore
+            userAddress: 'none',
+            setUserAddress: address => {
+                set(state => ({
+                    ...state,
+                    userAddress: address
+                }));
+            }
+        }),
+        {
+            name: 'test-user-info'
+        }
+    )
+);
+
+export default userInfoStore;
